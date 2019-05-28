@@ -85,6 +85,8 @@ public class StarPather {
 						ts.setBottom(4);
 					else if (e.getValue2() == 3)
 						ts.setBottom(8);
+					else if (e.getValue2() == 4)
+						ts.setBottom(16);
 					index++;
 					//System.out.println("Time: " + ts.top + "/" + ts.bottom);
 				}

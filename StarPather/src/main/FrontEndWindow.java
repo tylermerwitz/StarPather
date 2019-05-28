@@ -24,7 +24,7 @@ public class FrontEndWindow {
 	private Button btnEasy;
 	private Button btnUltraEasy;
 	private Button btnEasyFull;
-	private Text text_1;
+	private Text txtNoSu;
 	private Button btnSelectchart;
 	public String chart = "";
 	private Button btnNewButton;
@@ -70,7 +70,7 @@ public class FrontEndWindow {
 		
 		txtTest = new Text(shlStar, SWT.BORDER | SWT.READ_ONLY | SWT.CENTER);
 		txtTest.setText(chart);
-		txtTest.setBounds(91, 88, 274, 21);
+		txtTest.setBounds(91, 61, 274, 21);
 		
 		btnSelectchart = new Button(shlStar, SWT.NONE);
 		btnSelectchart.addSelectionListener(new SelectionListener() {
@@ -90,7 +90,7 @@ public class FrontEndWindow {
 				
 			}
 		});
-		btnSelectchart.setBounds(10, 86, 75, 25);
+		btnSelectchart.setBounds(10, 59, 75, 25);
 		btnSelectchart.setText("Select .chart");
 		
 		Button btnNoSqueeze = new Button(shlStar, SWT.RADIO);
@@ -100,7 +100,7 @@ public class FrontEndWindow {
 				pathType = "NoSqueeze";
 			}
 		});
-		btnNoSqueeze.setBounds(111, 123, 90, 16);
+		btnNoSqueeze.setBounds(101, 88, 90, 16);
 		btnNoSqueeze.setText("No Squeeze");
 		
 		btnEasy = new Button(shlStar, SWT.RADIO);
@@ -111,7 +111,7 @@ public class FrontEndWindow {
 			}
 		});
 		btnEasy.setText("Easy");
-		btnEasy.setBounds(111, 145, 90, 16);
+		btnEasy.setBounds(101, 110, 90, 16);
 		
 		btnUltraEasy = new Button(shlStar, SWT.RADIO);
 		btnUltraEasy.addSelectionListener(new SelectionAdapter() {
@@ -121,7 +121,7 @@ public class FrontEndWindow {
 			}
 		});
 		btnUltraEasy.setText("Ultra Easy");
-		btnUltraEasy.setBounds(205, 123, 90, 16);
+		btnUltraEasy.setBounds(195, 88, 90, 16);
 		
 		btnEasyFull = new Button(shlStar, SWT.RADIO);
 		btnEasyFull.addSelectionListener(new SelectionAdapter() {
@@ -131,15 +131,48 @@ public class FrontEndWindow {
 			}
 		});
 		btnEasyFull.setText("Easy full");
-		btnEasyFull.setBounds(205, 145, 90, 16);
+		btnEasyFull.setBounds(195, 110, 90, 16);
 		
-		text_1 = new Text(shlStar, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
-		text_1.setEditable(false);
-		text_1.setBounds(10, 207, 355, 207);
+		txtNoSu = new Text(shlStar, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+		
+		StringBuffer usage = new StringBuffer();
+		usage.append("Welcome to StarPather V1.0.0!\n");
+		usage.append("Created by Tyler Merwitz\n");
+		usage.append("Last Updated: 05/28/2019\n\n");
+		usage.append("This program was designed to optimize the Star Power path\n");
+		usage.append("for any .chart file. Please report any bugs to this\n");
+		usage.append("program's github page:\n");
+		usage.append("https://github.com/tylermerwitz/StarPather\n");
+		usage.append("Useage:\n");
+		usage.append("First, click the \"Select .chart\" button near the top of\n");
+		usage.append(" the window and find the .chart file you wish to use\n");
+		usage.append("Next, select one of the four options for pathing:\n");
+		usage.append("     -No Squeeze: Find the optimal star power path for the\n");
+		usage.append("      chart entered if you do NOT squeeze any notes.\n");
+		usage.append("     -Ultra Easy: Returns the score you will get on this\n");
+		usage.append("      chart if you always activate star power as soon as\n");
+		usage.append("      it is available and do not use the whammy.\n");
+		usage.append("     -Easy: Returns the score you will get on this chart\n");
+		usage.append("      if you always activate star power as soon as it's\n");
+		usage.append("      available\n");
+		usage.append("     -Easy Full: Returns the score you will get on this chart\n");
+		usage.append("      if you always activate star power as soon your star\n");
+		usage.append("      power meter is completely full\n");
+		usage.append("Finally, hit the \"Optimize\" button, and viola!\n");
+		usage.append("The program will print the Star Power path requested!\n");
+		usage.append("Note: It is recommend you use this tool in combination\n");
+		usage.append("with Gutair_Hero_Tools.exe in order to get a better\n");
+		usage.append("understanding and visualization of where to activate\n");
+		usage.append("Star Power\n");
+		usage.append("https://www.youtube.com/watch?v=LMY3HyK09js\n");
+		
+		txtNoSu.setText(usage.toString());
+		txtNoSu.setEditable(false);
+		txtNoSu.setBounds(10, 172, 355, 242);
 		
 		Label lblTestGui = new Label(shlStar, SWT.NONE);
 		lblTestGui.setFont(SWTResourceManager.getFont("Segoe UI", 22, SWT.NORMAL));
-		lblTestGui.setBounds(111, 21, 129, 43);
+		lblTestGui.setBounds(123, 10, 129, 43);
 		lblTestGui.setText("StarPather");
 		
 		btnNewButton = new Button(shlStar, SWT.NONE);
@@ -150,7 +183,7 @@ public class FrontEndWindow {
 					File f = new File(chart);
 					if (!f.exists()) {
 						diaBox = "File selected could not be found. Please re-select chart file.";
-						text_1.setText(diaBox);
+						txtNoSu.setText(diaBox);
 					}
 					else {
 						InputStream is = null;
@@ -178,7 +211,7 @@ public class FrontEndWindow {
 						}
 						
 						diaBox = path.getOutput();
-						text_1.setText(diaBox);
+						txtNoSu.setText(diaBox);
 						
 					}
 				}
@@ -190,7 +223,7 @@ public class FrontEndWindow {
 				
 			}
 		});
-		btnNewButton.setBounds(135, 169, 105, 32);
+		btnNewButton.setBounds(125, 134, 105, 32);
 		btnNewButton.setText("Optimize!");
 
 	}

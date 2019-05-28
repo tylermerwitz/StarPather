@@ -123,6 +123,9 @@ public class StarPather {
 			sum = sum + n.getValue();
 		}
 		
+		if (subMap.isEmpty()) {
+			return 0;
+		}
 		Note nn = subMap.get(subMap.lastKey());
 		int noteEnd = nn.getTime() + nn.getLength();
 		if (max < noteEnd) {
@@ -639,7 +642,7 @@ public class StarPather {
 					lastSyncIndex = updateSync(active,lastSyncIndex);
 				}
 
-				double tsMes = ts.getTop() / ts.getBottom() * 4;
+				double tsMes = 1.0 * ts.getTop() / ts.getBottom() * 4;
 				int splength = (int) Math.round(tsMes * sp * resolution);
 				int firstActive = active;
 				int lastActive = 0;
@@ -919,10 +922,15 @@ public class StarPather {
 					}
 				}
 				else {
-					for (int m = 0; m < ones.size(); m++) {
-						int theOne = ones.get(m);
-						int ind = theOne;
-						if (s.charAt(ind) != 1) {
+					int spNum = 0;
+					ArrayList<Integer> posOnes = new ArrayList<Integer>();
+					for (int m = 0; m < s.length(); m++) {
+						int thisSpNum = s.charAt(m);
+						spNum = spNum + thisSpNum;
+						if (thisSpNum == '1') {
+							posOnes.add(spNum);
+						}
+						if (!ones.contains(spNum)) {
 							add = false;
 						}
 					}
@@ -1311,7 +1319,7 @@ public class StarPather {
 
 	public ArrayList<Integer> CheckOnes () {
 		ArrayList<Integer> ones = new ArrayList<Integer>();
-		int i = 0;
+		int i = 1;
 		
 		for (Map.Entry<Integer, StarSection> entry : starMap.entrySet())  {
 			StarSection ss = entry.getValue();
@@ -1537,7 +1545,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (2).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (3).chart");
 		InputStream is = null;
 
 		try {
@@ -1548,7 +1556,7 @@ public class StarPather {
 		}
 
 		test.parseFile(is);
-		//test.printStarMap();
+		test.printStarMap();
 		test.noSqueezePath();
 		System.out.println(test.getOutput());
 		//System.out.println("Ultra Easy Score: " + test.ultraEasyPath());

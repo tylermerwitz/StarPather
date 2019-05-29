@@ -1,6 +1,12 @@
-Welcome to StarPather V1.0.0!
+Welcome to StarPather V1.0.2!
 Created by Tyler Merwitz
-Last Updated: 05/28/2019
+Last Updated: 05/29/2019
+
+Patch Notes:
+05/29/19 - V 1.0.2
+   -Various bug fixes
+05/29/19 - V 1.0.1
+   -Fixed issue causing immediate program crash on certain PCs
 
 This program was designed to optimize the Star Power path
 for any .chart file. Please report any bugs to this

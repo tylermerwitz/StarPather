@@ -136,9 +136,9 @@ public class FrontEndWindow {
 		txtNoSu = new Text(shlStar, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
 		
 		StringBuffer usage = new StringBuffer();
-		usage.append("Welcome to StarPather V1.0.0!\n");
+		usage.append("Welcome to StarPather V1.0.2!\n");
 		usage.append("Created by Tyler Merwitz\n");
-		usage.append("Last Updated: 05/28/2019\n\n");
+		usage.append("Last Updated: 05/29/2019\n\n");
 		usage.append("This program was designed to optimize the Star Power path\n");
 		usage.append("for any .chart file. Please report any bugs to this\n");
 		usage.append("program's github page:\n");

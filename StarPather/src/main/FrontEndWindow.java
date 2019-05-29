@@ -204,9 +204,10 @@ public class FrontEndWindow {
 							path.ultraEasyPath();
 						}
 						else if (pathType.equals("Ultra")) {
-							path.ultraEasyNoWhammy();
+							path.setNoWhammy(true);
+							path.ultraEasyPath();
 						}
-						else if (pathType.equals("EasyFull")) {
+						else if (pathType.equals("Full")) {
 							path.ultraEasyFullPath();
 						}
 						

@@ -48,6 +48,7 @@ public class StarPather {
 	SortedMap<Integer,StarSection> starMap = new TreeMap<Integer,StarSection>();
 
 	private boolean noWhammy = false;
+	private boolean lazyWhammy = false;
 
 	public StarPather () {}
 
@@ -67,6 +68,14 @@ public class StarPather {
 	
 	public String getOutput () {
 		return this.output.toString();
+	}
+	
+	public void setNoWhammy(boolean b) {
+		this.noWhammy = b;
+	}
+	
+	public void setLazyWhammy(boolean b) {
+		this.lazyWhammy = b;
 	}
 
 	public int updateSync (int time, int index) {
@@ -395,11 +404,13 @@ public class StarPather {
 			if (!lastSyncEvent) {
 				lastSyncIndex = updateSync(ss.getTime(),lastSyncIndex);
 			}
+			
+			double lv = 0;
 
 			if (ss.getMeasures() > 0) {
-				double lv = ss.addLength();
+				lv = ss.returnLength();
 			}
-			sp = sp + ss.getMeasures();
+			sp = sp + ss.getMeasures() + lv;
 			//output.append(ss.getMeasures());
 			if (sp > 8) {
 				sp = 8;
@@ -428,75 +439,12 @@ public class StarPather {
 				checkExtraSP(active,end,sp);
 
 				int spSum = getValueSum(active, end);
-				output.append(spSum + "\n");
 				pathScore = pathScore + spSum;
 				sp = 0;
 			}
 		}
 		output.append("Easy Score: " + pathScore);
 		return pathScore;
-	}
-
-	public int ultraEasyNoWhammy () {
-
-		int pathScore = getTotalSum();
-		double sp = 0.0;
-
-		noWhammy = true;
-
-		lastSyncIndex = 0;
-
-		for (Map.Entry<Integer, StarSection> entry : starMap.entrySet())  {
-			StarSection ss = entry.getValue();
-
-			if (ss.getMeasures() == -100) {
-				ss.setMeasures(0);
-			}
-
-			if (!lastSyncEvent) {
-				lastSyncIndex = updateSync(ss.getTime(),lastSyncIndex);
-			}
-
-			if (ss.getMeasures() > 2) {
-				ss.setMeasures(2);
-			}
-			sp = sp + ss.getMeasures();
-			//System.out.println(sp);
-			if (sp > 8) {
-				sp = 8;
-			}
-
-			/*if (sp - 2 >= 4) {
-
-			}*/
-			if (sp >= 4){
-				int active = getActivationNote(ss.getTime(), ss.getLength());
-				SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
-				active = subMap.firstKey();
-
-				if (!lastSyncEvent) {
-					lastSyncIndex = updateSync(active,lastSyncIndex);
-				}
-
-				double tsMes = ts.getTop() / ts.getBottom() * 4;
-				int splength = (int) Math.round(tsMes * sp * resolution);
-				int end = active + splength;
-
-				if (!lastSyncEvent) {
-					end = checkSync(active,end,sp);
-				}
-
-				checkExtraSP(active,end,sp);
-
-				int spSum = getValueSum(active, end);
-				pathScore = pathScore + spSum;
-				sp = 0;
-			}
-		}
-
-		output.append("Ultra Easy Score: " + pathScore);
-		return pathScore;
-
 	}
 
 	public int ultraEasyFullPath () {
@@ -516,10 +464,12 @@ public class StarPather {
 				lastSyncIndex = updateSync(ss.getTime(),lastSyncIndex);
 			}
 
+			double lv = 0;
+
 			if (ss.getMeasures() > 0) {
-				double lv = ss.addLength();
+				lv = ss.returnLength();
 			}
-			sp = sp + ss.getMeasures();
+			sp = sp + ss.getMeasures() + lv;
 			//System.out.println(ss.getMeasures());
 			if (sp > 8) {
 				sp = 8;
@@ -1511,20 +1461,6 @@ public class StarPather {
 			this.length = l;
 		}
 
-		public double addLength () {
-			//Need to figure out way to adjust if bpm or ts changes in middle of hold note
-			int notesLength = getLengthSum(time, time+length);
-			double lv = 0.0;
-
-			if (notesLength > 0) {
-				lv = (double) notesLength / resolution;
-				lv = lv / 3.75;
-				this.measures = this.measures + lv;
-			}
-
-			return lv;
-		}
-
 		public double returnLength () {
 			//Need to figure out way to adjust if bpm or ts changes in middle of hold note
 			int notesLength = getLengthSum(time, time+length);
@@ -1534,8 +1470,17 @@ public class StarPather {
 				lv = (double) notesLength / resolution;
 				lv = lv / 3.75;
 			}
+			
+			double whammy = 1.06666667;
+			
+			if (noWhammy) {
+				whammy = 0;
+			}
+			else if (lazyWhammy) {
+				whammy = 0.8;
+			}
 
-			return lv;
+			return lv * whammy;
 		}
 
 		public int getTime() {
@@ -1567,7 +1512,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (4).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (2).chart");
 		InputStream is = null;
 
 		try {
@@ -1579,7 +1524,8 @@ public class StarPather {
 
 		test.parseFile(is);
 		test.printStarMap();
-		test.noSqueezePath();
+		test.ultraEasyFullPath();
+		//test.noSqueezePath();
 		System.out.println(test.getOutput());
 		//System.out.println("Ultra Easy Score: " + test.ultraEasyPath());
 		//System.out.println("Ultra Easy NW Score: " + test.ultraEasyNoWhammy());

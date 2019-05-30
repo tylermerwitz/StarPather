@@ -1481,8 +1481,18 @@ public class StarPather {
 			double lv = 0.0;
 
 			if (notesLength > 0) {
+				SortedMap<Integer,Note> nlMap = noteMap.subMap(time, time+length);
+				int nn = 0;
+				for (Map.Entry<Integer, Note> entry : nlMap.entrySet())  {
+					Note n = entry.getValue();
+					if (n.length>0) {
+						nn++;
+					}
+				}
+				double nnn = nn * 0.0625;
 				lv = (double) notesLength / resolution;
-				lv = lv / 3.75;
+				lv = lv / 4;
+				lv= lv- nnn;
 			}
 			
 			double whammy = 1.0;

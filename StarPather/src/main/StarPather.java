@@ -182,7 +182,7 @@ public class StarPather {
 				this.linesRead++;
 				this.lastLine = theline;
 
-				if (theline.startsWith("[Song]")) {
+				if (theline.contains("[Song]")) {
 					songSection = true;
 					continue;
 				}
@@ -203,7 +203,7 @@ public class StarPather {
 						songInfo.append(artistName);
 						continue;
 					}
-					else if (theline.startsWith("Resolution =")) {
+					else if (theline.startsWith("Resolution =") || theline.startsWith("  Resolution =")) {
 						resolution = Integer.parseInt(theline.substring(15).trim());
 						//System.out.println(resolution);
 						continue;
@@ -305,18 +305,18 @@ public class StarPather {
 
 							String fret = theline.substring(split+4,split+6).trim();
 
-							if (fret.equals("6")) {
+							if (fret.equals("6") || fret.equals("5")) {
 								continue;
 							}
 							else {
 								String length = theline.substring(split+6).trim();
 								int value = 50;
 
-								if (!length.equals(0)) {
+								/*if (!length.equals("0")) {
 									double lv = Double.parseDouble(length) / resolution;
 									lv = lv * 25;
 									value = (int) (value + Math.round(lv));
-								}
+								}*/
 
 								if (notes == 0) {
 									Note n = new Note(time,fret,length,value);
@@ -326,7 +326,13 @@ public class StarPather {
 								}
 
 								if (noteMap.containsKey(time)) {
+									if (notes == 9 || notes == 19 || notes == 29) {
+										mult--;
+									}
 									value = value * mult;
+									if (notes == 9 || notes == 19 || notes == 29) {
+										mult++;
+									}
 									Note n = new Note(time,fret,length,value);
 									n.chord(noteMap.get(time));
 									noteMap.replace(time, n);
@@ -334,19 +340,26 @@ public class StarPather {
 								}
 								else {
 									if (!maxMult) {
-										if (notes >= 30) {
+										if (notes >= 29) {
 											mult = 4;
 											maxMult = true;
 										}
-										else if (notes >= 20 && mult < 3) {
+										else if (notes >= 19 && mult < 3) {
 											mult = 3;
 										}
-										else if (notes >= 10 && mult < 2) {
+										else if (notes >= 9 && mult < 2) {
 											mult = 2;
 										}
 									}
-
+									
 									value = value * mult;
+									
+									if (!length.equals("0")) {
+										double lv = Double.parseDouble(length) / resolution;
+										lv = lv * mult * (resolution / (resolution/25));
+										value = (int) (value + lv);
+									}
+
 									Note n = new Note(time,fret,length,value);
 									noteMap.put(time, n);
 									notes++;
@@ -626,6 +639,7 @@ public class StarPather {
 						for (int m = 0; m < activations.size(); m++) {
 							if (bestActivation < activations.get(m)) {
 								activeNumber = m + "(" + (currentSp - m) + ")";
+								m = activations.size();
 							}
 						}
 					}
@@ -1471,7 +1485,7 @@ public class StarPather {
 				lv = lv / 3.75;
 			}
 			
-			double whammy = 1.06666667;
+			double whammy = 1.0;
 			
 			if (noWhammy) {
 				whammy = 0;
@@ -1512,7 +1526,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (2).chart");
+		File chart = new File("C:\\Users\\Tyler\\Documents\\go.chart");
 		InputStream is = null;
 
 		try {
@@ -1524,8 +1538,8 @@ public class StarPather {
 
 		test.parseFile(is);
 		test.printStarMap();
-		test.ultraEasyFullPath();
-		//test.noSqueezePath();
+		//test.ultraEasyFullPath();
+		test.noSqueezePath();
 		System.out.println(test.getOutput());
 		//System.out.println("Ultra Easy Score: " + test.ultraEasyPath());
 		//System.out.println("Ultra Easy NW Score: " + test.ultraEasyNoWhammy());

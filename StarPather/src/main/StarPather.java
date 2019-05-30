@@ -176,6 +176,7 @@ public class StarPather {
 		boolean syncSection = false;
 		boolean eventSection = false;
 		boolean notesSection = false;
+		int offset = 2;
 
 		StringBuffer songInfo = new StringBuffer();
 		
@@ -201,20 +202,21 @@ public class StarPather {
 					if (theline.startsWith("{")) {
 						continue;
 					}
-					else if (theline.startsWith("Name = ")) {
-						String songName = theline.substring(9).trim().replace("\"", "");
+					else if (theline.contains("Name = ")) {
+						offset = theline.indexOf("=") - 5;
+						String songName = theline.substring(offset+7).trim().replace("\"", "");
 						appendName(songName);
 						songInfo.append(songName);
 						continue;
 					}
 					else if (theline.startsWith("Artist =")) {
-						String artistName = " by " + theline.substring(11).trim().replace("\"", "");
+						String artistName = " by " + theline.substring(offset+9).trim().replace("\"", "");
 						appendName(artistName);
 						songInfo.append(artistName);
 						continue;
 					}
 					else if (theline.startsWith("Resolution =") || theline.startsWith("  Resolution =")) {
-						resolution = Integer.parseInt(theline.substring(15).trim());
+						resolution = Integer.parseInt(theline.substring(offset+13).trim());
 						//System.out.println(resolution);
 						continue;
 					}
@@ -246,7 +248,7 @@ public class StarPather {
 
 					else {
 						int split = theline.indexOf("=");
-						String ind = theline.substring(2,split).trim();
+						String ind = theline.substring(offset,split).trim();
 						String type = "";
 						String val = "";
 						if (theline.charAt(split+2) == 'T') {
@@ -305,7 +307,7 @@ public class StarPather {
 
 						int split = theline.indexOf("=");
 
-						int time = Integer.parseInt(theline.substring(2,split).trim());
+						int time = Integer.parseInt(theline.substring(offset,split).trim());
 
 						if (!lastSyncEvent) {
 							lastSyncIndex = updateSync(time,lastSyncIndex);
@@ -386,11 +388,11 @@ public class StarPather {
 						}
 						
 						else if (theline.substring(split+1).equals(" E solo")) {
-							soloB = Integer.parseInt(theline.substring(2,split).trim());
+							soloB = Integer.parseInt(theline.substring(offset,split).trim());
 						}
 						
 						else if (theline.contains("= E soloend")) {
-							soloE = Integer.parseInt(theline.substring(2,split).trim()) + 1;
+							soloE = Integer.parseInt(theline.substring(offset,split).trim()) + 1;
 							SoloSection soS = new SoloSection (soloB,soloE);
 							SoloSections.add(soS);
 							soloB = 0;
@@ -1759,7 +1761,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (7).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (4).chart");
 		InputStream is = null;
 
 		try {

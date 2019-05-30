@@ -26,6 +26,7 @@ public class StarPather {
 	private int numberOfOnes = 0;
 	private boolean maxMult = false;
 	private int bestScore;
+	int soloBonus = 0;
 
 	protected String name = "";
 	private StringBuffer output = new StringBuffer();
@@ -37,6 +38,7 @@ public class StarPather {
 	private TimeSig ts = new TimeSig();
 
 	private ArrayList<SyncEvent> syncEvents = new ArrayList<SyncEvent>();
+	private ArrayList<SoloSection> SoloSections = new ArrayList<SoloSection>();
 
 	private boolean lastSyncEvent = false;
 	private int lastSyncIndex = 0;
@@ -48,6 +50,7 @@ public class StarPather {
 	SortedMap<Integer,StarSection> starMap = new TreeMap<Integer,StarSection>();
 
 	private boolean noWhammy = false;
+	private boolean badWhammy = false;
 	private boolean lazyWhammy = false;
 
 	public StarPather () {}
@@ -72,6 +75,10 @@ public class StarPather {
 	
 	public void setNoWhammy(boolean b) {
 		this.noWhammy = b;
+	}
+	
+	public void setBadWhammy(boolean b) {
+		this.badWhammy = b;
 	}
 	
 	public void setLazyWhammy(boolean b) {
@@ -171,6 +178,9 @@ public class StarPather {
 		boolean notesSection = false;
 
 		StringBuffer songInfo = new StringBuffer();
+		
+		int soloB = 0;
+		int soloE = 0;
 
 		try{
 			in = new BufferedReader(new InputStreamReader(chart));
@@ -374,6 +384,18 @@ public class StarPather {
 							StarSection ss = new StarSection(time,l);
 							starMap.put(time, ss);
 						}
+						
+						else if (theline.substring(split+1).equals(" E solo")) {
+							soloB = Integer.parseInt(theline.substring(2,split).trim());
+						}
+						
+						else if (theline.contains("= E soloend")) {
+							soloE = Integer.parseInt(theline.substring(2,split).trim()) + 1;
+							SoloSection soS = new SoloSection (soloB,soloE);
+							SoloSections.add(soS);
+							soloB = 0;
+							soloE = 0;
+						}
 
 					}
 
@@ -395,9 +417,27 @@ public class StarPather {
 			System.out.println(lastError);
 		}
 		finally {
+			if (soloB != 0 && soloE == 0) {
+				soloE = noteMap.lastKey();
+				SoloSection soS = new SoloSection (soloB,soloE);
+				SoloSections.add(soS);
+			}
+			
 			int score = getTotalSum();
 			output.append("Notes: " + notes + "\n");
-			output.append("Base Score: " + score + "\n\n");
+			output.append("Base Score: " + score + "\n");
+			
+			if (SoloSections.size() > 0) {
+				for (int i = 0; i < SoloSections.size(); i++) {
+					SoloSection sos = SoloSections.get(i);
+					SortedMap<Integer,Note> soloMap = noteMap.subMap(sos.getBegin(),sos.getEnd());
+					soloBonus = soloBonus + (soloMap.size() * 100);
+				}
+				output.append("Solo Bonuses: " + soloBonus + "\n");
+				int bs = score + soloBonus;
+				output.append("Base Score plus Solos: " + bs + "\n");
+			}
+			output.append("\n");
 		}
 	}
 
@@ -452,7 +492,7 @@ public class StarPather {
 				checkExtraSP(active,end,sp);
 
 				int spSum = getValueSum(active, end);
-				pathScore = pathScore + spSum;
+				pathScore = pathScore + spSum  + soloBonus;
 				sp = 0;
 			}
 		}
@@ -511,7 +551,7 @@ public class StarPather {
 				checkExtraSP(active,end,sp);
 
 				int spSum = getValueSum(active, end);
-				pathScore = pathScore + spSum;
+				pathScore = pathScore + spSum + soloBonus;
 				sp = 0;
 			}
 		}
@@ -754,7 +794,7 @@ public class StarPather {
 					bestPathDetail = pathDetail.toString();
 				}
 			}
-			pathScore = pathScore + bestComboScore;
+			pathScore = pathScore + bestComboScore + soloBonus;
 			output.append("Best Path: " + bestPath + "\n");
 			output.append("Score = " + pathScore + "\n\n");
 			output.append(bestPathDetail);
@@ -839,13 +879,39 @@ public class StarPather {
 		ArrayList<int[]> comboList = new ArrayList<int[]>();
 
 		findCombinationsUtil(arr,comboList,0,n,n);
+		
+		if (n >= 10) {
+			ArrayList<int[]> tempList = new ArrayList<int[]>();
+			for (int in = 0; in < comboList.size(); in++) {
+				int[] temp = comboList.get(in);
+				boolean add = true;
+				for (int jn = 0; jn < temp.length; jn++) {
+					int t = temp[jn];
+					if (t >= 5) {
+						add = false;
+						jn = temp.length;
+					}
+				}
+				if (add) {
+					tempList.add(comboList.get(in));
+				}
+			}
+			
+			comboList.clear();
+			
+			for (int kn = 0; kn < tempList.size(); kn++) {
+				comboList.add(tempList.get(kn));
+			}
+		} 
 
 		ArrayList<String> allCombos = new ArrayList<String>();
 
 		for (int i = 0; i < comboList.size(); i++) {
 			int[] str = new int[comboList.get(i).length];
+			int digit = 0;
 			boolean sameDigits = true;
-			if (starMap.size() > 9) {
+			boolean samePlusOnes = true;
+			/*if (starMap.size() > 9) {
 				boolean skip = false;
 				for (int q = 0; q < comboList.get(i).length; q++) {
 					int checkOverTen = comboList.get(i)[q];
@@ -856,15 +922,36 @@ public class StarPather {
 				if (skip) {
 					continue;
 				}
-			}
+			}*/
 			for (int j = 0; j < str.length; j++) {
 				str[j] = comboList.get(i)[j];
+				if (str[j] != 1 && digit == 0) {
+					digit = str[j];
+				}
 				if (j > 0) {
-					if (str[j] != str[j-1]) {
+					if (str[j] != digit || str[j] == 1) {
 						sameDigits = false;
+					}
+					if (str[j] != digit && str[j] != 1) {
+						samePlusOnes = false;
 					}
 				}
 			}
+			boolean excessOnes = false;
+			int checkOnesCount = 0;
+			for (int checkOnes = 0; checkOnes < str.length; checkOnes++) {
+				int checker = str[checkOnes];
+				if (checker == 1)
+					checkOnesCount++;
+				if (checkOnesCount > numberOfOnes + 1) {
+					excessOnes = true;
+					checkOnes = str.length;
+				}
+			}
+			if (excessOnes) {
+				continue;
+			}
+			
 			if (str.length == 1) {
 				String s = Integer.toString(str[0]);
 				if (!allCombos.contains(s)) {
@@ -890,9 +977,72 @@ public class StarPather {
 					allCombos.add(s);
 				}
 			}
+			else if (samePlusOnes) {
+				if (numberOfOnes == 0 || numberOfOnes == 1) {
+					String oneCombo = "";
+					for (int iones = 0; iones < str.length; iones++) {
+						if (iones != str.length-1) {
+							oneCombo = oneCombo + digit;
+						}
+						else {
+							oneCombo = oneCombo + "1";
+						}
+					}
+					if (!allCombos.contains(oneCombo)) {
+						allCombos.add(oneCombo);
+					}
+				}
+				else if (checkOnesCount == numberOfOnes + 1) {
+					String s = "";
+					for (int strl = 0; strl < str.length; strl++) {
+						s = s + str[strl];
+					}
+					StringBuilder sb = new StringBuilder(s);
+					boolean addThis = true;
+					for (int oner = 0; oner < ones.size(); oner++) {
+						if (ones.get(oner) >= sb.length()) {
+							addThis = false;
+							continue;
+						}
+						sb.setCharAt(ones.get(oner)-1, '1');
+					}
+					if (!addThis) {
+						continue;
+					}
+					sb.setCharAt(sb.length()-1, '1');
+					s = sb.toString();
+					if (!allCombos.contains(s)) {
+						allCombos.add(s);
+					}
+				}
+				else if (checkOnesCount == numberOfOnes) {
+					String s = "";
+					for (int strl = 0; strl < str.length; strl++) {
+						s = s + str[strl];
+					}
+					StringBuilder sb = new StringBuilder(s);
+					boolean addThis = true;
+					for (int oner = 0; oner < ones.size(); oner++) {
+						if (ones.get(oner) >= sb.length()) {
+							addThis = false;
+							continue;
+						}
+						sb.setCharAt(ones.get(oner)-1, '1');
+					}
+					if (!addThis) {
+						continue;
+					}
+					s = sb.toString();
+					if (!allCombos.contains(s)) {
+						allCombos.add(s);
+					}
+				}
+				else {
+					QuickPerm(str,allCombos);
+				}
+			}
 			else {
-				int m = str.length; 
-				permute(str, 0, m - 1,allCombos);
+				QuickPerm(str,allCombos);
 			}
 		}
 
@@ -1064,7 +1214,52 @@ public class StarPather {
 		temp = a[i]; 
 		a[i] = a[j]; 
 		a[j] = temp; 
-	} 
+	}
+	
+	public void QuickPerm(int[] combo, ArrayList<String> all)
+	{
+	   int n = combo.length;
+	   int a[] = new int[n];
+	   int p[] = new int[n+1];
+	   int i, j, tmp; // Upper Index i; Lower Index j
+
+	   for(i = 0; i < n; i++)   // initialize arrays; a[N] can be any type
+	   {
+	      a[i] = combo[i];   // a[i] value is not revealed and can be arbitrary
+	      p[i] = i;
+	   }
+	   p[n] = n; // p[N] > 0 controls iteration and the index boundary for i
+	   quickCheck(a, 0, 0, all,n);   // remove comment to display array a[]
+	   i = 1;   // setup first swap points to be 1 and 0 respectively (i & j)
+	   while(i < n)
+	   {
+	      p[i]--;             // decrease index "weight" for i by one
+	      j = i % 2 * p[i];   // IF i is odd then j = p[i] otherwise j = 0
+	      tmp = a[j];         // swap(a[j], a[i])
+	      a[j] = a[i];
+	      a[i] = tmp;
+	      quickCheck(a, j, i,all,n); // remove comment to display target array a[]
+	      i = 1;              // reset index i to 1 (assumed)
+	      while (p[i] == 0)       // while (p[i] == 0)
+	      {
+	         p[i] = i;        // reset p[i] zero value
+	         i++;             // set new index value for i (increase by one)
+	      } // while(!p[i])
+	   } // while(i < N)
+	} // QuickPerm()
+	
+	void quickCheck(int a[], int j, int i, ArrayList<String> all, int n)            
+	{
+		String s = "";
+	   for(int x = 0; x < n; x++) {
+	      //System.out.println(a[x]);
+	      s = s + a[x];
+	   }
+	   //System.out.println("   swapped(" + j +", " + i + ")\n");
+	   if (!all.contains(s)) {
+		   all.add(s);
+	   }
+	} // display()
 
 
 	public int checkSync (int active, int end, double sp) {
@@ -1481,24 +1676,26 @@ public class StarPather {
 			double lv = 0.0;
 
 			if (notesLength > 0) {
-				SortedMap<Integer,Note> nlMap = noteMap.subMap(time, time+length);
+				/*SortedMap<Integer,Note> nlMap = noteMap.subMap(time, time+length);
 				int nn = 0;
 				for (Map.Entry<Integer, Note> entry : nlMap.entrySet())  {
 					Note n = entry.getValue();
 					if (n.length>0) {
 						nn++;
 					}
-				}
-				double nnn = nn * 0.0625;
+				}*/
+				//double nnn = nn * 0.0625;
 				lv = (double) notesLength / resolution;
-				lv = lv / 4;
-				lv= lv- nnn;
+				lv = lv / 3.75;
 			}
 			
 			double whammy = 1.0;
 			
 			if (noWhammy) {
 				whammy = 0;
+			}
+			else if (badWhammy) {
+				whammy = 0.5;
 			}
 			else if (lazyWhammy) {
 				whammy = 0.8;
@@ -1532,11 +1729,37 @@ public class StarPather {
 		}
 
 	}
+	
+	public class SoloSection {
+		int begin = 0;
+		int end = 0;
+		
+		public SoloSection (int b, int e) {
+			this.begin = b;
+			this.end = e;
+		}
+		
+		public int getBegin() {
+			return begin;
+		}
+
+		public void setBegin(int begin) {
+			this.begin = begin;
+		}
+
+		public int getEnd() {
+			return end;
+		}
+
+		public void setEnd(int end) {
+			this.end = end;
+		}
+	}
 
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:\\Users\\Tyler\\Documents\\go.chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (7).chart");
 		InputStream is = null;
 
 		try {
@@ -1546,8 +1769,11 @@ public class StarPather {
 			e.printStackTrace();
 		}
 
+		//test.setLazyWhammy(true);
 		test.parseFile(is);
 		test.printStarMap();
+		//ArrayList<String> combos = new ArrayList<String>();
+		//test.checkStarCombos(combos);
 		//test.ultraEasyFullPath();
 		test.noSqueezePath();
 		System.out.println(test.getOutput());

@@ -1,13 +1,8 @@
-Welcome to StarPather V1.0.3!
+Welcome to StarPather V1.0.2!
 Created by Tyler Merwitz
 Last Updated: 05/29/2019
 
 Patch Notes:
-05/29/19 - V 1.0.3
-Fixed another few bugs:
--Program was not calculating whammy star power gains correctly. According to documentation, 7.5 beats of whammying = 2 measures of star power, therefore SP gain when whammying should be: 
-   Total Length of Held Notes in Star Power Section * 1.066666667
--Easy Full option now properly shows score after hitting "Optimize"
 05/29/19 - V 1.0.2
    -Various bug fixes
 05/29/19 - V 1.0.1

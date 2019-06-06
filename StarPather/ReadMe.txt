@@ -3,6 +3,10 @@ Created by Tyler Merwitz AKA MathyNoodles
 Last Updated: 06/06/2019
 
 Patch Notes:
+06/05/19 - V 1.0.6
+   -Program can now handle large charts very quickly.
+   -There is probably still a limit to SP phrases but I have
+     yet to find a chart that reaches that limit.
 06/05/19 - V 1.0.5
    -Tons of fixes in the scoring logic
    -Added options to returns paths that include squeezing

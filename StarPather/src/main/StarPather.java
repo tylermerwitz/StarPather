@@ -1152,7 +1152,11 @@ public class StarPather {
 				boolean add = true;
 				for (int jn = 0; jn < temp.length; jn++) {
 					int t = temp[jn];
-					if (n > 15 && t >= 6) {
+					if (n > 15 && t >= 5) {
+						add = false;
+						jn = temp.length;
+					}
+					if (n > 30 && t >= 4) {
 						add = false;
 						jn = temp.length;
 					}
@@ -1302,12 +1306,18 @@ public class StarPather {
 						allCombos.add(s);
 					}
 				}
-				else {
+				else if (str.length < 8){
 					QuickPerm(str,allCombos);
 				}
+				else {
+					LongPerm(str,allCombos);
+				}
+			}
+			else if (str.length < 8) {
+				QuickPerm(str,allCombos);
 			}
 			else {
-				QuickPerm(str,allCombos);
+				LongPerm(str,allCombos);
 			}
 		}
 
@@ -1528,6 +1538,129 @@ public class StarPather {
 	   }
 	} // display()
 
+	
+	public void LongPerm(int[] combo, ArrayList<String> all) {
+		int div = combo.length / 5;
+		int rem = combo.length % div;
+		int len = combo.length / div;
+		
+		int [][] ray = new int[div][];
+		
+		for (int i = 0; i < ray.length; i++) {
+			int le = len;
+			int re = 0;
+			if (rem!= 0 && i == ray.length - 1) {
+				le = le + rem;
+				re = rem;
+			}
+			ray[i] = new int [le];
+			int it = 0;
+			for (int j = i * len; j < (i+1) * len + re; j++) {
+				ray[i][it] = combo[j];
+				it++;
+			}
+		}
+		
+		ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
+		
+		for (int k = 0; k < ray.length; k++) {
+			int digit = 0;
+			boolean sameDigits = true;
+			
+			if (list.size() < k + 1) {
+				list.add(new ArrayList<String>());
+			}
+			/*if (starMap.size() > 9) {
+				boolean skip = false;
+				for (int q = 0; q < comboList.get(i).length; q++) {
+					int checkOverTen = comboList.get(i)[q];
+					if (checkOverTen >= 10) {
+						skip = true;
+					} 
+				}
+				if (skip) {
+					continue;
+				}
+			}*/
+			for (int m = 0; m < ray[k].length; m++) {
+				if (digit == 0) {
+					digit = ray[k][m];
+				}
+				if (m > 0) {
+					if (ray[k][m] != digit) {
+						sameDigits = false;
+					}
+				}
+			}
+			
+			if (sameDigits) {
+				String s = "";
+				for (int p = 0; p < ray[k].length; p++) {
+					s = s + Integer.toString(ray[k][p]);
+				}
+				if (!list.get(k).contains(s)) {
+					list.get(k).add(s);
+				}
+			}
+			
+			else {
+				QuickPerm(ray[k], list.get(k));
+			}
+		}
+		
+		if (list.size() == 2) {
+			for (int q = 0; q < list.get(0).size(); q++) {
+				String s1 = list.get(0).get(q);
+				for (int r = 0; r < list.get(1).size(); r++) {
+					String s2 = list.get(1).get(r);
+					String com = s1 + s2;
+					if (!all.contains(com)) {
+						all.add(com);
+					}
+					com = s2 + s1;
+					if (!all.contains(com)) {
+						all.add(com);
+					}
+				}
+			}
+		}
+		
+		if (list.size() == 3) {
+			for (int q = 0; q < list.get(0).size(); q++) {
+				String s1 = list.get(0).get(q);
+				for (int r = 0; r < list.get(1).size(); r++) {
+					String s2 = list.get(1).get(r);
+					for (int s = 0; s < list.get(2).size(); s++) {
+						String s3 = list.get(2).get(s);
+						String com = s1 + s2 + s3;
+						if (!all.contains(com)) {
+							all.add(com);
+						}
+						com = s2 + s1 + s3;
+						if (!all.contains(com)) {
+							all.add(com);
+						}
+						com = s3 + s1 + s2;
+						if (!all.contains(com)) {
+							all.add(com);
+						}
+						com = s1 + s3 + s2;
+						if (!all.contains(com)) {
+							all.add(com);
+						}
+						com = s2 + s3 + s1;
+						if (!all.contains(com)) {
+							all.add(com);
+						}
+						com = s3 + s2 + s1;
+						if (!all.contains(com)) {
+							all.add(com);
+						}
+					}
+				}
+			}
+		}
+ 	}
 
 	public int checkSync (int active, int end, double sp) {
 
@@ -2034,7 +2167,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (12).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (8).chart");
 		InputStream is = null;
 
 		try {

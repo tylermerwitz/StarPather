@@ -22,16 +22,16 @@ public class FrontEndWindow {
 	protected Shell shlStar;
 	private Text txtTest;
 	private Button btnEasy;
-	private Button btnLazy;
+	private Button btnEarlyWhammy;
 	private Button btnUltra;
 	private Text txtNoSu;
 	private Button btnSelectchart;
 	public String chart = "";
 	private Button btnNewButton;
-	
+
 	String pathType = "";
 	String diaBox = "";
-	
+
 	/**
 	 * Launch the application.
 	 * @param args
@@ -67,42 +67,42 @@ public class FrontEndWindow {
 		shlStar = new Shell();
 		shlStar.setSize(391, 463);
 		shlStar.setText("StarPather");
-		
+
 		txtTest = new Text(shlStar, SWT.BORDER | SWT.READ_ONLY | SWT.CENTER);
 		txtTest.setText(chart);
 		txtTest.setBounds(91, 61, 274, 21);
-		
+
 		btnSelectchart = new Button(shlStar, SWT.NONE);
 		btnSelectchart.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
 				FileDialog fd = new FileDialog(shlStar, SWT.OPEN);
-		        fd.setText("Open");
-		        fd.setFilterPath("C:/");
-		        String[] filterExt = { "*.chart"};
-		        fd.setFilterExtensions(filterExt);
-		        chart = fd.open();
-		        txtTest.setText(chart);
+				fd.setText("Open");
+				fd.setFilterPath("C:/");
+				String[] filterExt = { "*.chart"};
+				fd.setFilterExtensions(filterExt);
+				chart = fd.open();
+				txtTest.setText(chart);
 			}
 
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 				// TODO Auto-generated method stub
-				
+
 			}
 		});
 		btnSelectchart.setBounds(10, 59, 75, 25);
 		btnSelectchart.setText("Select .chart");
-		
-		Button btnNoSqueeze = new Button(shlStar, SWT.RADIO);
-		btnNoSqueeze.addSelectionListener(new SelectionAdapter() {
+
+		Button btnFullSqueeze = new Button(shlStar, SWT.RADIO);
+		btnFullSqueeze.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				pathType = "NoSqueeze";
+				pathType = "FullSqueeze";
 			}
 		});
-		btnNoSqueeze.setBounds(101, 88, 90, 16);
-		btnNoSqueeze.setText("No Squeeze");
-		
+		btnFullSqueeze.setBounds(101, 88, 90, 16);
+		btnFullSqueeze.setText("Full Squeeze");
+
 		btnEasy = new Button(shlStar, SWT.RADIO);
 		btnEasy.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -112,17 +112,17 @@ public class FrontEndWindow {
 		});
 		btnEasy.setText("Easy");
 		btnEasy.setBounds(101, 110, 90, 16);
-		
-		btnLazy = new Button(shlStar, SWT.RADIO);
-		btnLazy.addSelectionListener(new SelectionAdapter() {
+
+		btnEarlyWhammy = new Button(shlStar, SWT.RADIO);
+		btnEarlyWhammy.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				pathType = "Lazy";
+				pathType = "Early";
 			}
 		});
-		btnLazy.setText("Lazy Whammy");
-		btnLazy.setBounds(195, 88, 100, 16);
-		
+		btnEarlyWhammy.setText("Early Whammy");
+		btnEarlyWhammy.setBounds(195, 88, 100, 16);
+
 		btnUltra = new Button(shlStar, SWT.RADIO);
 		btnUltra.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -132,52 +132,50 @@ public class FrontEndWindow {
 		});
 		btnUltra.setText("Ultra Easy");
 		btnUltra.setBounds(195, 110, 90, 16);
-		
+
 		txtNoSu = new Text(shlStar, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
-		
+
 		StringBuffer usage = new StringBuffer();
-		usage.append("Welcome to StarPather V1.0.4!\n");
-		usage.append("Created by Tyler Merwitz\n");
-		usage.append("Last Updated: 05/30/2019\n\n");
+		usage.append("Welcome to StarPather V1.0.5!\n");
+		usage.append("Created by Tyler Merwitz AKA MathyNoodles\n");
+		usage.append("Last Updated: 06/06/2019\n\n");
 		usage.append("This program was designed to optimize the Star Power path\n");
-		usage.append("for any .chart file. Please report any bugs to this\n");
-		usage.append("program's github page:\n");
-		usage.append("https://github.com/tylermerwitz/StarPather\n");
+		usage.append("for any .chart file. Please report any bugs to this program's\n");
+		usage.append("github page:\n");
+		usage.append("https://github.com/tylermerwitz/StarPather\n\n");
 		usage.append("Special thanks to Nemo296 for his invaluable info on\n");
 		usage.append("the .chart format and helping me refine a ton of the\n");
-		usage.append("scoring logic!\n");
+		usage.append("scoring logic!\n\n");
 		usage.append("Useage:\n");
 		usage.append("First, click the \"Select .chart\" button near the top of\n");
 		usage.append(" the window and find the .chart file you wish to use\n");
 		usage.append("Next, select one of the four options for pathing:\n");
-		usage.append("     -No Squeeze: Find the optimal star power path for the\n");
-		usage.append("      chart entered if you do NOT squeeze any notes.\n");
-		usage.append("     -Lazy Whammy: Finds the optimal no squeeze path when\n");
-		usage.append("      you get ~80% of the maximum star power from\n");
+		usage.append("     -Full Squeeze: Find the optimal star power path for the\n");
+		usage.append("      chart entered with squeezing and early whammying.\n");
+		usage.append("     -Early Whammy: Find the optimal star power path for the\n");
+		usage.append("      chart entered with NO squeezing and early whammying\n");
 		usage.append("      whammying.\n");
+		usage.append("     -Easy: Find the optimal star power path for the chart\n");
+		usage.append("      entered with NO squeezing and NO early whammying\n");
 		usage.append("     -Ultra Easy: Returns the score you will get on this\n");
 		usage.append("      chart if you always activate star power as soon as\n");
-		usage.append("      it is available and do not use the whammy.\n");
-		usage.append("     -Easy: Returns the score you will get on this chart\n");
-		usage.append("      if you always activate star power as soon as it's\n");
-		usage.append("      available\n");
+		usage.append("      it's available\n");
 		usage.append("Finally, hit the \"Optimize\" button, and viola!\n");
-		usage.append("The program will print the Star Power path requested!\n");
+		usage.append("The program will print the Star Power path requested!\n\n");
 		usage.append("Note: It is recommend you use this tool in combination\n");
 		usage.append("with Gutair_Hero_Tools.exe in order to get a better\n");
 		usage.append("understanding and visualization of where to activate\n");
-		usage.append("Star Power\n");
 		usage.append("https://www.youtube.com/watch?v=LMY3HyK09js\n");
-		
+
 		txtNoSu.setText(usage.toString());
 		txtNoSu.setEditable(false);
 		txtNoSu.setBounds(10, 172, 355, 242);
-		
+
 		Label lblTestGui = new Label(shlStar, SWT.NONE);
 		lblTestGui.setFont(SWTResourceManager.getFont("Segoe UI", 22, SWT.NORMAL));
 		lblTestGui.setBounds(123, 10, 129, 43);
 		lblTestGui.setText("StarPather");
-		
+
 		btnNewButton = new Button(shlStar, SWT.NONE);
 		btnNewButton.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
@@ -196,31 +194,57 @@ public class FrontEndWindow {
 							// TODO Auto-generated catch block
 							er.printStackTrace();
 						}
-						
+
 						StarPather path = new StarPather();
-						
-						if (pathType.equals("NoSqueeze")) {
-							path.parseFile(is);
-							path.noSqueezePath();
+
+						if (pathType.equals("FullSqueeze")) {
+							try {
+								path.setSqueeze(true);
+								path.setEarlyWhammy(true);
+								path.parseFile(is);
+								path.noSqueezePath();
+							}
+							catch (Exception er) {
+								String ert = er.toString();
+								txtNoSu.setText(ert);
+							}
 						}
 						else if (pathType.equals("Easy")) {
-							path.parseFile(is);
-							path.ultraEasyPath();
+							try {
+								path.parseFile(is);
+								path.noSqueezePath();
+							}
+							catch (Exception er) {
+								String ert = er.toString();
+								txtNoSu.setText(ert);
+							}
 						}
 						else if (pathType.equals("Ultra")) {
-							path.setNoWhammy(true);
-							path.parseFile(is);
-							path.ultraEasyPath();
+							try {
+								path.setBadWhammy(true);
+								path.parseFile(is);
+								path.ultraEasyPath();
+							}
+							catch (Exception er) {
+								String ert = er.toString();
+								txtNoSu.setText(ert);
+							}
 						}
-						else if (pathType.equals("Lazy")) {
-							path.setLazyWhammy(true);
-							path.parseFile(is);
-							path.noSqueezePath();
+						else if (pathType.equals("Early")) {
+							try {
+								path.setEarlyWhammy(true);
+								path.parseFile(is);
+								path.noSqueezePath();
+							}
+							catch (Exception er) {
+								String ert = er.toString();
+								txtNoSu.setText(ert);
+							}
 						}
-						
+
 						diaBox = path.getOutput();
 						txtNoSu.setText(diaBox);
-						
+
 					}
 				}
 			}
@@ -228,7 +252,7 @@ public class FrontEndWindow {
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 				// TODO Auto-generated method stub
-				
+
 			}
 		});
 		btnNewButton.setBounds(125, 134, 105, 32);

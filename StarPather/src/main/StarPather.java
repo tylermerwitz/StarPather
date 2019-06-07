@@ -803,10 +803,10 @@ public class StarPather {
 						}
 						
 						activeDetail = activeDetail + "\n";
-						boolean perserve = takeFromNext;
-						int lastBestPre = lastBestScore;
+						//boolean perserve = takeFromNext;
+						//int lastBestPre = lastBestScore;
 						
-						if (testAnother) {
+						/*if (testAnother) {
 							//tempBestDetail = tempBestDetail + activeDetail;
 							int currentBestCombo = bestScore + lastBestScore;
 							
@@ -924,15 +924,14 @@ public class StarPather {
 									testLastAct = subMap99.get(subMap99.lastKey()).getTime() - splength;
 								}
 							}
+						}*/
+						pathDetail.append(activeDetail);
+						if (actualPath.length() != 0) {
+							actualPath = actualPath + ", ";
 						}
-						if (!takeFromNext) {
-							pathDetail.append(activeDetail);
-							if (actualPath.length() != 0) {
-								actualPath = actualPath + ", ";
-							}
-							actualPath = actualPath + activeNumber;
-							comboScore = comboScore + bestScore;
-						}
+						actualPath = actualPath + activeNumber;
+						comboScore = comboScore + bestScore;
+						
 						
 					}
 				}
@@ -1897,6 +1896,45 @@ public class StarPather {
 
 		return exists;
 	}
+	
+	public void test () {
+		for (int i = 1; i < 4; i++) {
+			int arr[] = new int [i];
+			ArrayList<int[]> comboList = new ArrayList<int[]>();
+			ArrayList<String> allCombos = new ArrayList<String>();
+			ArrayList<ArrayList<String>> sepCombos = new ArrayList<ArrayList<String>>();
+
+			findCombinationsUtil(arr,comboList,0,i,i);
+			
+			for (int j = 0; j < comboList.size(); j++) {
+				QuickPerm(comboList.get(j),allCombos);
+			}
+			
+			for (int k = 0; k < allCombos.size(); k++) {
+				String s = allCombos.get(k);
+				
+				int oneCount = 0;
+
+			    for(int l=0; l < s.length(); l++)
+			    {    if(s.charAt(i) == '1')
+			            oneCount++;
+			    }
+			    
+			    if (oneCount == 0) {
+			    	if (sepCombos.size() < 1) {
+			    		sepCombos.set(0,new ArrayList<String>());
+			    	}
+			    	sepCombos.get(0).add(s);
+			    }
+			    else if (oneCount == 1 && s.charAt(s.length()-1) == '1'){
+			    	if (sepCombos.size() < 1) {
+			    		sepCombos.set(0,new ArrayList<String>());
+			    	}
+			    	sepCombos.get(0).add(s);
+			    }
+			}
+		}
+	}
 
 	public ArrayList<Integer> CheckOnes () {
 		ArrayList<Integer> ones = new ArrayList<Integer>();
@@ -2167,7 +2205,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (8).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (13).chart");
 		InputStream is = null;
 
 		try {
@@ -2177,8 +2215,9 @@ public class StarPather {
 			e.printStackTrace();
 		}
 
-		test.setEarlyWhammy(true);
-		test.setSqueeze(true);
+		//test.setEarlyWhammy(true);
+		//test.setSqueeze(true);
+		test.setLazyWhammy(true);
 		test.parseFile(is);
 		test.printStarMap();
 		//ArrayList<String> combos = new ArrayList<String>();

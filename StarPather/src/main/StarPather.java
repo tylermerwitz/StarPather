@@ -39,6 +39,7 @@ public class StarPather {
 	private double posLate = 0.0;
 	public boolean takeFromNext = false;
 	private double spFromNext = 0.0;
+	private boolean containsTen = false;
 
 	private TimeSig ts = new TimeSig();
 
@@ -103,6 +104,9 @@ public class StarPather {
 	}
 	public void setNextSp(double i) {
 		this.spFromNext = i;
+	}
+	public void setContainsTen(boolean b) {
+		this.containsTen = b;
 	}
 
 
@@ -359,6 +363,8 @@ public class StarPather {
 									notes++;
 									continue;
 								}
+								
+								Note lastnote = noteMap.get(noteMap.lastKey());
 
 								if (noteMap.containsKey(time)) {
 									if (notes == 9 || notes == 19 || notes == 29) {
@@ -388,6 +394,16 @@ public class StarPather {
 									}
 									
 									value = value * mult;
+									
+									if (time < lastnote.getTime() + lastnote.getLength()) {
+										int thisEnd = time + Integer.parseInt(length);
+										int lastEnd = lastnote.getTime() + lastnote.getLength();
+										int dif = thisEnd - lastEnd;
+										if (dif < 0) {
+											dif = 0;
+										}
+										length = "" + dif;
+									}
 									
 									if (!length.equals("0")) {
 										/*double lv = Double.parseDouble(length) / resolution;
@@ -657,6 +673,7 @@ public class StarPather {
 						if (takeFromNext) {
 							testAnother = true;
 							lv = lv - (spFromNext/3.75);
+							setTakeNext(false);
 						}
 						sp = sp + ss.getMeasures() + lv;
 
@@ -741,19 +758,19 @@ public class StarPather {
 					
 					int bestActivation = getHighestScore(firstActive,lastActive,splength,maxsplength,spValues);
 					
-					/*if (takeFromNext) {
+					if (takeFromNext) {
 						splength = (int) (splength + spFromNext);
 						double spFromCheck = spFromNext;
-						int bestActivation2 = getHighestScore(bestActivation,lastActive,splength);
+						int bestActivation2 = getHighestScore(bestActivation,lastActive,splength,maxsplength,spValues);
 						while (spFromCheck < spFromNext) {
 							spFromCheck = spFromNext - 1;
-							bestActivation2 = getHighestScore(bestActivation2,lastActive,splength);
+							bestActivation2 = getHighestScore(bestActivation2,lastActive,splength,maxsplength,spValues);
 							if (spFromNext - 1 == spFromCheck) {
 								spFromCheck++;
 							}
 						}
 						bestActivation = bestActivation2;
-					}*/
+					}
 
 					if (activations.size()==0) {
 						continue;
@@ -1434,13 +1451,17 @@ public class StarPather {
 				}
 				if (arr[i]!=0) {
 					tempArr[i] = arr[i];
+					if (arr[i] >= 10) {
+						setContainsTen(true);
+					}
 				}
 			}
 
-			if (numOf1 <= numberOfOnes + 1) {
-				arr2.add(tempArr);
-			}
-
+				if (!containsTen)
+					arr2.add(tempArr);
+				else
+					setContainsTen(false);
+				
 			return; 
 		} 
 
@@ -1898,16 +1919,73 @@ public class StarPather {
 	}
 	
 	public void test () {
-		for (int i = 1; i < 4; i++) {
+		for (int i = 13; i < 14; i++) {
+			StringBuffer sb = new StringBuffer();
+			sb.append("case " + i + ":\n");
 			int arr[] = new int [i];
 			ArrayList<int[]> comboList = new ArrayList<int[]>();
 			ArrayList<String> allCombos = new ArrayList<String>();
-			ArrayList<ArrayList<String>> sepCombos = new ArrayList<ArrayList<String>>();
+			SortedMap<Integer,ArrayList<String>> sepCombos = new TreeMap<Integer,ArrayList<String>>();
 
 			findCombinationsUtil(arr,comboList,0,i,i);
 			
 			for (int j = 0; j < comboList.size(); j++) {
-				QuickPerm(comboList.get(j),allCombos);
+				int[] str = new int[comboList.get(j).length];
+				int digit = 0;
+				boolean sameDigits = true;
+				if (i > 9) {
+					boolean skip = false;
+					for (int q = 0; q < comboList.get(i).length; q++) {
+						int checkOverTen = comboList.get(i)[q];
+						if (checkOverTen >= 10) {
+							skip = true;
+						} 
+					}
+					if (skip) {
+						continue;
+					}
+				}
+				for (int jc = 0; jc < str.length; jc++) {
+					str[jc] = comboList.get(j)[jc];
+					if (digit == 0) {
+						digit = str[jc];
+					}
+					if (jc > 0) {
+						if (str[jc] != digit) {
+							sameDigits = false;
+						}
+					}
+				}
+				
+				if (str.length == 1) {
+					String s = Integer.toString(str[0]);
+					if (!allCombos.contains(s)) {
+						allCombos.add(s);
+					}
+				}
+				else if (str.length == 2) {
+					String s = Integer.toString(str[0]) + Integer.toString(str[1]);
+					if (!allCombos.contains(s)) {
+						allCombos.add(s);
+					}
+					String s2 = Integer.toString(str[1]) + Integer.toString(str[0]);
+					if (!allCombos.contains(s2)) {
+						allCombos.add(s2);
+					}
+				}
+				else if (sameDigits) {
+					String s = "";
+					for (int k = 0; k < str.length; k++) {
+						s = s + Integer.toString(str[k]);
+					}
+					if (!allCombos.contains(s)) {
+						allCombos.add(s);
+					}
+				}
+				
+				else {
+					QuickPerm(comboList.get(j),allCombos);
+				}
 			}
 			
 			for (int k = 0; k < allCombos.size(); k++) {
@@ -1916,23 +1994,52 @@ public class StarPather {
 				int oneCount = 0;
 
 			    for(int l=0; l < s.length(); l++)
-			    {    if(s.charAt(i) == '1')
+			    {    if(s.charAt(l) == '1')
 			            oneCount++;
 			    }
 			    
-			    if (oneCount == 0) {
-			    	if (sepCombos.size() < 1) {
-			    		sepCombos.set(0,new ArrayList<String>());
+			    oneCount--;
+			    
+			    if (oneCount < 0) {
+			    	if (!sepCombos.containsKey(0)) {
+			    		sepCombos.put(0,new ArrayList<String>());
 			    	}
 			    	sepCombos.get(0).add(s);
 			    }
-			    else if (oneCount == 1 && s.charAt(s.length()-1) == '1'){
-			    	if (sepCombos.size() < 1) {
-			    		sepCombos.set(0,new ArrayList<String>());
+			    else if (oneCount == 0 && s.charAt(s.length()-1) == '1'){
+			    	if (!sepCombos.containsKey(0)) {
+			    		sepCombos.put(0,new ArrayList<String>());
 			    	}
 			    	sepCombos.get(0).add(s);
+			    }
+			    else {
+			    	if (s.charAt(s.length()-1) != '1')
+			    		oneCount ++;
+			    	if (!sepCombos.containsKey(oneCount)) {
+			    		sepCombos.put(oneCount,new ArrayList<String>());
+			    	}
+			    	sepCombos.get(oneCount).add(s);
 			    }
 			}
+			
+			for (Map.Entry<Integer, ArrayList<String>> entry : sepCombos.entrySet())  {
+				if (entry.getValue().size() == 0) {
+					continue;
+				}
+				if (entry.getKey() > 0) {
+					sb.append("if (ones > " + (entry.getKey() - 1) + ") {\n");
+				}
+				
+				for (int n = 0; n < entry.getValue().size(); n++) {
+					sb.append("list.add(\"" + entry.getValue().get(n) + "\");\n");
+				}
+				
+				if (entry.getKey() > 0) {
+					sb.append("}\n");
+				}
+			}
+			sb.append("break;\n");
+			System.out.println(sb.toString());
 		}
 	}
 
@@ -2205,7 +2312,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (13).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (19).chart");
 		InputStream is = null;
 
 		try {
@@ -2214,10 +2321,12 @@ public class StarPather {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		//test.test();
 
-		//test.setEarlyWhammy(true);
-		//test.setSqueeze(true);
-		test.setLazyWhammy(true);
+		test.setEarlyWhammy(true);
+		test.setSqueeze(true);
+		//test.setLazyWhammy(true);
 		test.parseFile(is);
 		test.printStarMap();
 		//ArrayList<String> combos = new ArrayList<String>();

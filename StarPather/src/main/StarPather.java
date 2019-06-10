@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -26,6 +28,7 @@ public class StarPather {
 	private int numberOfOnes = 0;
 	private boolean maxMult = false;
 	private int bestScore;
+	private double bestSp;
 	private int lastBestScore;
 	int soloBonus = 0;
 
@@ -789,7 +792,7 @@ public class StarPather {
 						activeNumber = "" + currentSp;
 					}
 					//double mesDis = (1.0 * splength) /( 1.0 * resolution)/tsMes;
-					String activeDetail = activeNumber + "\n";
+					String activeDetail = activeNumber + " (" + (bestSp/resolution/tsMes) + " SP)\n";
 					//pathDetail.append(bestActivation+"\n");
 
 					Note activeNote = noteMap.get(bestActivation);
@@ -1058,6 +1061,7 @@ public class StarPather {
 	public int getHighestScore (int firstAct, int lastAct, int sp, int maxsp, ArrayList<StarSection> sss) {
 		int activationPoint = 0;
 		int highestScore = 0;
+		double highestSp = 0;
 		setTakeNext(false);
 		setNextSp(0);
 
@@ -1075,6 +1079,9 @@ public class StarPather {
 				}
 				else {
 					nextcheck = jss.returnLength();
+					if (nextcheck == 0) {
+						nextcheck = nextcheck + .01;
+					}
 					nnn = jnn;
 					j = sss.size();
 				}
@@ -1083,6 +1090,9 @@ public class StarPather {
 				fullSp = maxsp;
 			}
 			else if (nextcheck > 0) {
+				if (nextcheck == .01) {
+					nextcheck = nextcheck - .01;
+				}
 				nextcheck = spLeft (i,nnn.getTime(),maxcheck+nextcheck);
 				if (nextcheck > 6.0) {
 					nextcheck = nextcheck - 6.0;
@@ -1090,14 +1100,25 @@ public class StarPather {
 					int splength = (int) Math.round(tsMes * nextcheck * resolution);
 					fullSp = sp - splength;
 				}
-			}
+				else if ( nextcheck < 0) {
+					continue;
+				}
+			} 
 			else {
 				fullSp = sp;
 			}
+			
+			if (nnn!= null) {
+				int max = nnn.getTime() + maxsp;
+				if (i+fullSp > max) {
+					fullSp = max - i;
+				}
+			}
+			
 			int sectionScore = getValueSum(i,i+fullSp);
 			if (sectionScore > highestScore) {
 				SortedMap<Integer,StarSection> subMap = starMap.subMap(i,i+fullSp);
-				if (subMap.size() >= 1) {
+				if (subMap.size() >= 1 && nnn==null) {
 					StarSection ss = subMap.get(subMap.firstKey());
 					if (ss.returnLength() > 0) {
 						int sLen = getLengthSum(ss.getTime(),i+fullSp);
@@ -1111,19 +1132,38 @@ public class StarPather {
 					}
 				}
 				highestScore = sectionScore;
+				highestSp = fullSp;
 				activationPoint = i;
 			}
 			else if (sectionScore == highestScore) {
 				Note note = noteMap.get(i);
 				Note note2 = noteMap.get(activationPoint);
 				if (note2 == null && note != null) {
+
+					SortedMap<Integer,StarSection> subMap = starMap.subMap(i,i+fullSp);
+					if (subMap.size() >= 1 && nnn==null) {
+						StarSection ss = subMap.get(subMap.firstKey());
+						if (ss.returnLength() > 0) {
+							int sLen = getLengthSum(ss.getTime(),i+fullSp);
+							if (sLen > 0) {
+								setTakeNext(true);
+								double nsp;
+								nsp = (double) sLen / resolution;
+								nsp = nsp / 3.75;
+								setNextSp(nsp);
+							}
+						}
+					}
 					activationPoint = i;
+					highestSp = fullSp;
+				
 				}
 			}
 		}
 
 		lastBestScore = bestScore;
 		bestScore = highestScore;
+		bestSp = highestSp;
 		return activationPoint;
 	
 	}
@@ -2371,7 +2411,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (19).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/Overflow_test (1).chart");
 		InputStream is = null;
 
 		try {

@@ -1935,8 +1935,41 @@ public class StarPather {
 		return exists;
 	}
 	
+	public void FastPerm(String str,String prefix,ArrayList<String> all)
+	{
+	    if(str.length()==0)
+	    {
+	    	if (!all.contains(prefix))
+	    		all.add(prefix);
+	    }
+	    else
+	    {
+	        for (int i = 0; i<str.length();i++)
+	        {
+	            if(i>0)
+	            {
+	                if(str.charAt(i)==str.charAt(i-1))
+	                {
+	                    continue;
+	                }
+	            }
+
+	            FastPerm(str.substring(0, i)+str.substring(i+1, str.length()),prefix+str.charAt(i), all);
+
+	        }
+	    }
+	}
+	
 	public void test () {
-		for (int i = 13; i < 14; i++) {
+		File outfile = new File("Combos.txt");
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(outfile);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		for (int i = 16; i < 17; i++) {
 			StringBuffer sb = new StringBuffer();
 			sb.append("case " + i + ":\n");
 			int arr[] = new int [i];
@@ -1952,8 +1985,8 @@ public class StarPather {
 				boolean sameDigits = true;
 				if (i > 9) {
 					boolean skip = false;
-					for (int q = 0; q < comboList.get(i).length; q++) {
-						int checkOverTen = comboList.get(i)[q];
+					for (int q = 0; q < comboList.get(j).length; q++) {
+						int checkOverTen = comboList.get(j)[q];
 						if (checkOverTen >= 10) {
 							skip = true;
 						} 
@@ -2001,7 +2034,11 @@ public class StarPather {
 				}
 				
 				else {
-					QuickPerm(comboList.get(j),allCombos);
+					String s = "";
+					for (int k = 0; k < str.length; k++) {
+						s = s + Integer.toString(str[k]);
+					}
+					FastPerm(s,"",allCombos);
 				}
 			}
 			
@@ -2056,7 +2093,12 @@ public class StarPather {
 				}
 			}
 			sb.append("break;\n");
-			System.out.println(sb.toString());
+			try {
+				out.write(sb.toString().getBytes());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 

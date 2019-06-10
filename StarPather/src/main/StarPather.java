@@ -1063,6 +1063,8 @@ public class StarPather {
 
 		for (int i = firstAct; i <= lastAct; i++) {
 			double maxcheck = 0;
+			double nextcheck = 0;
+			Note nnn = null;
 			int fullSp = 0;
 			for (int j = 0; j < sss.size(); j++) {
 				StarSection jss = sss.get(j);
@@ -1071,9 +1073,23 @@ public class StarPather {
 				if (jnn.getTime() <= i) {
 					maxcheck = maxcheck + jss.getMeasures() + jss.returnLength();
 				}
+				else {
+					nextcheck = jss.returnLength();
+					nnn = jnn;
+					j = sss.size();
+				}
 			}
 			if (maxcheck >= 8.0) {
 				fullSp = maxsp;
+			}
+			else if (nextcheck > 0) {
+				nextcheck = spLeft (i,nnn.getTime(),maxcheck+nextcheck);
+				if (nextcheck > 6.0) {
+					nextcheck = nextcheck - 6.0;
+					double tsMes = ts.getTop() / ts.getBottom() * 4;
+					int splength = (int) Math.round(tsMes * nextcheck * resolution);
+					fullSp = sp - splength;
+				}
 			}
 			else {
 				fullSp = sp;
@@ -1109,6 +1125,7 @@ public class StarPather {
 		lastBestScore = bestScore;
 		bestScore = highestScore;
 		return activationPoint;
+	
 	}
 
 	public double spLeft (int active, int current, double sp) {

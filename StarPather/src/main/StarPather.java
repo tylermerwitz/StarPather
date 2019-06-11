@@ -9,7 +9,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -949,6 +952,7 @@ public class StarPather {
 					double sp = 0.0;
 					int active = 0 ;
 					double nextSub = spFromNext;
+					setBestSpLength(0);
 					//bestScore = 0;
 					ArrayList<Integer> activations = new ArrayList<Integer>();
 					ArrayList<StarSection> spValues = new ArrayList<StarSection>();
@@ -1035,7 +1039,9 @@ public class StarPather {
 						}
 						else {
 							SortedMap<Integer,Note> subMap3 = noteMap.subMap(firstActive,lastActive);
-							lastActive = subMap3.lastKey();
+							if (subMap3.size() > 0) {
+								lastActive = subMap3.lastKey();
+							}
 						}
 					}
 					else if (sp > 0){
@@ -1084,7 +1090,10 @@ public class StarPather {
 					for (int act = 0; act < acti; act++) {
 						actiMeasures = actiMeasures + spValues.get(act).getMeasures() + spValues.get(act).returnLength();
 					}
-					actiMeasures = actiMeasures / 8 * 100;
+					actiMeasures = Math.round(actiMeasures / 8 * 100);
+					if (actiMeasures > 100) {
+						actiMeasures = 100;
+					}
 					//double mesDis = (1.0 * splength) /( 1.0 * resolution)/tsMes;
 					String activeDetail = activeNumber + " (" + (actiMeasures) + "% SP)\n";
 					//pathDetail.append(bestActivation+"\n");
@@ -1105,14 +1114,16 @@ public class StarPather {
 						int mapStart = activations.get(afterStar - 1);
 						SortedMap<Integer,Note> subMap6 = noteMap.subMap(mapStart+1,activeNote.getTime()+1);
 						String noteFret = activeNote.getFret();
-						activeDetail = activeDetail + fretCounter(subMap6,noteFret,activeBefore,onNote) + "\n";
+						activeDetail = activeDetail + fretCounter(subMap6,noteFret,activeBefore,onNote) + 
+								" (Beat " + (1.0 * bestActivation/resolution) + ")\n";
 						
 						//pathDetail.append(activeDetail+"\n");
 						
-						if (squeeze) {
-							SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,activeNote.getTime()+bestSpLength);
-							noteFret = subMap7.get(subMap7.lastKey()).getFret();
-							activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret,0,onNote) + "\n";
+						if (squeeze && bestSpLength > 0) {
+							SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,bestSpLength);
+							String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
+							activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret2,0,onNote) +
+									" (Beat " + (1.0 * subMap7.lastKey()/resolution) + ")\n";
 							//pathDetail.append("Squeeze " + activeDetail +"\n");
 						}
 						
@@ -1274,11 +1285,11 @@ public class StarPather {
 
 	}
 	
-	public String fretCounter (SortedMap<Integer,Note> subMap6, String noteFret, int activeBefore, boolean onNote) {
+	public String fretCounter (SortedMap<Integer,Note> subMap, String noteFret, int activeBefore, boolean onNote) {
 
 		int fretCounter = 0;
 
-		for (Map.Entry<Integer, Note> entry : subMap6.entrySet()) {
+		for (Map.Entry<Integer, Note> entry : subMap.entrySet()) {
 			Note nn = entry.getValue();
 			if (nn.getFret().equals(noteFret)) {
 				fretCounter++;
@@ -1736,7 +1747,7 @@ public class StarPather {
 					}
 				}
 				highestScore = sectionScore;
-				highestSp = fullSp;
+				highestSp = max;
 				activationPoint = i;
 			}
 			else if (sectionScore == highestScore) {
@@ -1759,18 +1770,18 @@ public class StarPather {
 						}
 					}
 					activationPoint = i;
-					highestSp = fullSp;
+					highestSp = max;
 				
 				}
 			}
 		}
 		
-		double tsMes = ts.getTop() / ts.getBottom() * 4;
-		int bestSp = (int) Math.ceil(highestSp * tsMes * resolution);
+		//double tsMes = ts.getTop() / ts.getBottom() * 4;
+		//int bestSp = (int) Math.ceil(highestSp);
 
 		lastBestScore = bestScore;
 		bestScore = highestScore;
-		setBestSpLength(bestSp);
+		setBestSpLength((int)highestSp);
 		return activationPoint;
 	
 	}
@@ -1832,7 +1843,7 @@ public class StarPather {
 				boolean add = true;
 				for (int jn = 0; jn < temp.length; jn++) {
 					int t = temp[jn];
-					if (n > 15 && t >= 5) {
+					if (n > 15 && t >= 6) {
 						add = false;
 						jn = temp.length;
 					}
@@ -1987,18 +1998,20 @@ public class StarPather {
 						allCombos.add(s);
 					}
 				}
-				else if (str.length < 8){
-					QuickPerm(str,allCombos);
-				}
 				else {
-					LongPerm(str,allCombos);
+					String s = "";
+					for (int st = 0; st < str.length; st++) {
+						s = s + str[st];
+					}
+					FastPerm(s,"",allCombos);
 				}
-			}
-			else if (str.length < 8) {
-				QuickPerm(str,allCombos);
 			}
 			else {
-				LongPerm(str,allCombos);
+				String s = "";
+				for (int st = 0; st < str.length; st++) {
+					s = s + str[st];
+				}
+				FastPerm(s,"",allCombos);
 			}
 			
 			for (int l = 0; l < allCombos.size(); l++) {
@@ -3018,7 +3031,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (10).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (13).chart");
 		InputStream is = null;
 
 		try {
@@ -3040,6 +3053,9 @@ public class StarPather {
 		//test.ultraEasyFullPath();
 		test.noSqueezePath();
 		System.out.println(test.getOutput());
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date date = new Date();
+		System.out.println(dateFormat.format(date));
 		//System.out.println("Ultra Easy Score: " + test.ultraEasyPath());
 		//System.out.println("Ultra Easy NW Score: " + test.ultraEasyNoWhammy());
 		//System.out.println("Ultra Easy Full SP Score: " + test.ultraEasyFullPath());

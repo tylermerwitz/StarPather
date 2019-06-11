@@ -1779,7 +1779,7 @@ public class StarPather {
 		//double tsMes = ts.getTop() / ts.getBottom() * 4;
 		//int bestSp = (int) Math.ceil(highestSp);
 
-		lastBestScore = bestScore;
+		//lastBestScore = bestScore;
 		bestScore = highestScore;
 		setBestSpLength((int)highestSp);
 		return activationPoint;
@@ -1886,12 +1886,15 @@ public class StarPather {
 			}*/
 			for (int j = 0; j < str.length; j++) {
 				str[j] = comboList.get(i)[j];
-				if (str[j] != 1 && digit == 0) {
+				if (digit == 0) {
 					digit = str[j];
 				}
 				if (j > 0) {
-					if (str[j] != digit || str[j] == 1) {
+					if (str[j] != digit) {
 						sameDigits = false;
+						if (digit == 1) {
+							digit = str[j];
+						}
 					}
 					if (str[j] != digit && str[j] != 1) {
 						samePlusOnes = false;
@@ -2075,7 +2078,10 @@ public class StarPather {
 							SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
 							active = subMap.firstKey();
 						}
-
+						
+						if (sp < 4) {
+							sp = 0;
+						}
 
 						if (!lastSyncEvent) {
 							lastSyncIndex = updateSync(active,lastSyncIndex);
@@ -2091,16 +2097,17 @@ public class StarPather {
 
 						int check = checkExtraSPNoMod(active,end,sp);
 
-						if (check != 0) {
+						if (check != 0 && totalSp < ssections.size()) {
 							//System.out.println("Overlap");
 							add = false;
 						}
 					}
+					if (add) {
+						goodCombos.add(s);
+					}	
 				}
 
-				if (add) {
-					goodCombos.add(s);
-				}
+				
 			}
 		}
 
@@ -3031,7 +3038,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (13).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/3.chart");
 		InputStream is = null;
 
 		try {

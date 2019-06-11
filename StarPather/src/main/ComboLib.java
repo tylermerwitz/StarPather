@@ -12,7 +12,7 @@ public class ComboLib {
 		this.ones = o;
 	}
 	
-	public void returnCombos1 (ArrayList<String> list) {
+	public void returnCombos1through8 (ArrayList<String> list) {
 		switch (totalSP) {
 		case 1:
 			list.add("1");
@@ -348,9 +348,6 @@ public class ComboLib {
 			list.add("11111111");
 			}
 			break;
-
-			
-			
 		}
 	}
 	

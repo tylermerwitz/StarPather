@@ -58,7 +58,8 @@ public class StarPather {
 	//private SyncEvent current = new SyncEvent();
 	//private SyncEvent next = new SyncEvent();
 
-	SortedMap<Integer,SyncEvent> syncMap = new TreeMap<Integer,SyncEvent>();
+	SortedMap<Integer,SyncEvent> tsMap = new TreeMap<Integer,SyncEvent>();
+	SortedMap<Integer,SyncEvent> bpmMap = new TreeMap<Integer,SyncEvent>();
 	SortedMap<Integer,Note> noteMap = new TreeMap<Integer,Note>();
 	SortedMap<Integer,StarSection> starMap = new TreeMap<Integer,StarSection>();
 
@@ -117,6 +118,30 @@ public class StarPather {
 	}
 	public void setBestSpLength (int i) {
 		bestSpLength = i;
+	}
+	
+	public void updateSync (int time) {
+		SortedMap<Integer,SyncEvent> subMap = tsMap.subMap(tsMap.firstKey(), time);
+		SyncEvent e = subMap.get(subMap.lastKey());
+		
+		ts.setTop(e.getValue());
+		if (e.getValue2() == 0)
+			ts.setBottom(4);
+		else if (e.getValue2() == 3)
+			ts.setBottom(8);
+		else if (e.getValue2() == 4)
+			ts.setBottom(16);
+		//System.out.println("Time: " + ts.top + "/" + ts.bottom);
+		
+		SortedMap<Integer,SyncEvent> subMap2 = bpmMap.subMap(bpmMap.firstKey(), time);
+		SyncEvent e2 = subMap2.get(subMap2.lastKey());
+		
+		bpm = e2.getValue()/1000;
+		bps = bpm/60;
+		posEarly = Math.ceil(bps * .065 * resolution);
+		posLate = Math.ceil(bps * .075 * resolution);
+		
+		
 	}
 
 
@@ -187,6 +212,20 @@ public class StarPather {
 			int lv = (int) Math.ceil(((lengthDif / resolution) * (resolution / Math.ceil(resolution/25))));
 			sum = sum - lv;
 		}
+		
+		SortedMap<Integer,Note> subMap2 = noteMap.subMap(noteMap.firstKey(), min);
+		if (subMap2.size() > 0) {
+			Note ln = subMap2.get(subMap2.lastKey());
+			noteEnd = ln.getTime() + ln.getLength();
+			if (noteEnd > min) {
+				int lengthDif = noteEnd - min;
+				
+				int lv = (int) Math.ceil(((lengthDif / resolution) * (resolution / Math.ceil(resolution/25))));
+				sum = sum + lv;
+			}
+		}
+		
+		
 
 		return sum;
 	}
@@ -301,6 +340,12 @@ public class StarPather {
 							continue;
 						}
 						SyncEvent e = new SyncEvent(ind,type,val);
+						if (type.equals("TS")) {
+							tsMap.put(Integer.parseInt(ind), e);
+						}
+						else {
+							bpmMap.put(Integer.parseInt(ind), e);
+						}
 						syncEvents.add(e);
 						continue;
 					}
@@ -346,9 +391,9 @@ public class StarPather {
 
 						int time = Integer.parseInt(theline.substring(offset,split).trim());
 
-						if (!lastSyncEvent) {
-							lastSyncIndex = updateSync(time,lastSyncIndex);
-						}
+						
+						updateSync(time);
+						
 
 						if (theline.charAt(split+2) == 'N') {
 
@@ -540,7 +585,7 @@ public class StarPather {
 				}
 
 				double tsMes = ts.getTop() / ts.getBottom() * 4;
-				int splength = (int) Math.round(tsMes * sp * resolution);
+				int splength = (int) Math.ceil(tsMes * sp * resolution);
 				int end = active + splength;
 
 				if (!lastSyncEvent) {
@@ -599,7 +644,7 @@ public class StarPather {
 				}
 
 				double tsMes = ts.getTop() / ts.getBottom() * 4;
-				int splength = (int) Math.round(tsMes * sp * resolution);
+				int splength = (int) Math.ceil(tsMes * sp * resolution);
 				int end = active + splength;
 
 				if (!lastSyncEvent) {
@@ -977,9 +1022,8 @@ public class StarPather {
 					else {
 						for (int k = totalSp - currentSp; k < totalSp; k++ ) {
 							StarSection ss = ssections.get(k);
-							if (!lastSyncEvent) {
-								lastSyncIndex = updateSync(ss.getTime(),lastSyncIndex);
-							}
+
+							updateSync(ss.getTime());
 
 							double lv = ss.returnLength();
 							if (takeFromNext) {
@@ -1007,12 +1051,10 @@ public class StarPather {
 								int firstAct = getActivationNote(ss.getTime(),ss.getLength());
 								int secondAct = getActivationNote(lastSs.getTime(),lastSs.getLength());
 
-								if (!lastSyncEvent) {
-									lastSyncIndex = updateSync(firstAct,lastSyncIndex);
-								}
+								updateSync(firstAct);
 
 								double currentTsMes = ts.getTop() / ts.getBottom() * 4;
-								int currentSplength = (int) Math.round(currentTsMes * sp * resolution);
+								int currentSplength = (int) Math.ceil(currentTsMes * sp * resolution);
 
 								SortedMap<Integer,Note> subMap = noteMap.subMap(firstAct,secondAct);
 								active = subMap.lastKey() - currentSplength;
@@ -1025,18 +1067,16 @@ public class StarPather {
 							}
 						}
 
-						if (!lastSyncEvent) {
-							lastSyncIndex = updateSync(active,lastSyncIndex);
-						}
+						updateSync(active);
 
 						double tsMes = 1.0 * ts.getTop() / ts.getBottom() * 4;
-						int splength = (int) Math.round(tsMes * sp * resolution);
+						int splength = (int) Math.ceil(tsMes * sp * resolution);
 						int sqLen = 0;
 						if (squeeze) {
 							sqLen = (int) (posEarly + posLate);
 						}
 						splength = splength + sqLen;
-						int maxsplength = (int) Math.round(tsMes * 8 * resolution);
+						int maxsplength = (int) Math.ceil(tsMes * 8 * resolution);
 						maxsplength = maxsplength + sqLen;
 						int firstActive = active;
 						int lastActive = 0;
@@ -1138,10 +1178,12 @@ public class StarPather {
 
 							if (squeeze && a.end > 0) {
 								SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,a.end);
-								String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
-								activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret2,0,onNote) +
-										" (Beat " + (1.0 * subMap7.lastKey()/resolution) + ")\n";
-								//pathDetail.append("Squeeze " + activeDetail +"\n");
+								if (subMap7.size() > 0) {
+									String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
+									activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret2,0,onNote) +
+											" (Beat " + (1.0 * subMap7.lastKey()/resolution) + ")\n";
+									//pathDetail.append("Squeeze " + activeDetail +"\n");
+								}
 							}
 
 							activeDetail = activeDetail + "\n";
@@ -1438,7 +1480,7 @@ public class StarPather {
 				}
 
 				double tsMes = ts.getTop() / ts.getBottom() * 4;
-				int splength = (int) Math.round(tsMes * measures * resolution);
+				int splength = (int) Math.ceil(tsMes * measures * resolution);
 				if (squeeze) {
 					splength = (int) (splength + posEarly + posLate);
 				}
@@ -1505,13 +1547,13 @@ public class StarPather {
 			int extraLen = 0;
 			if (ss.returnLength() > 0) {
 				double tsMes = ts.getTop() / ts.getBottom() * 4;
-				extraLen = (int) Math.round(tsMes * ss.returnLength() * resolution);
+				extraLen = (int) Math.ceil(tsMes * ss.returnLength() * resolution);
 			}
 			lastEnd = getActivationNote(ss.time,ss.length) - extraLen;
 		}
 		
 		double tsMes = ts.getTop() / ts.getBottom() * 4;
-		int splength = (int) Math.round(tsMes * measures * resolution);
+		int splength = (int) Math.ceil(tsMes * measures * resolution);
 		if (squeeze) {
 			splength = (int) (splength + posEarly + posLate);
 		}
@@ -1560,7 +1602,7 @@ public class StarPather {
 					}
 
 					double tsMes = ts.getTop() / ts.getBottom() * 4;
-					splength = (int) Math.round(tsMes * sp * resolution);
+					splength = (int) Math.ceil(tsMes * sp * resolution);
 
 				}
 				else {
@@ -1610,7 +1652,7 @@ public class StarPather {
 					}
 
 					double tsMes = ts.getTop() / ts.getBottom() * 4;
-					int splength2 = (int) Math.round(tsMes * sp2 * resolution);
+					int splength2 = (int) Math.ceil(tsMes * sp2 * resolution);
 
 					splength = splength + splength2;
 				}
@@ -1692,10 +1734,14 @@ public class StarPather {
 		//setNextSp(0);
 
 		for (int i = firstAct; i <= lastAct; i++) {
+			if (i == 13152) {
+				System.out.println("");
+			}
 			double maxcheck = 0;
 			double nextcheck = 0;
 			Note nnn = null;
-			int fullSp = 0;
+			int currentsections = 0;
+			//int fullSp = 0;
 			for (int j = 0; j < sss.size(); j++) {
 				StarSection jss = sss.get(j);
 				SortedMap<Integer,Note> subMap2 = noteMap.subMap(jss.getTime(),jss.getTime()+jss.getLength());
@@ -1705,59 +1751,96 @@ public class StarPather {
 					if (maxcheck > 8.0) {
 						maxcheck = 8.0;
 					}
+					currentsections++;
 				}
-				else {
+				/*else {
 					nextcheck = jss.returnLength();
 					if (nextcheck == 0) {
 						nextcheck = nextcheck + .01;
 					}
 					nnn = jnn;
 					j = sss.size();
-				}
+				}*/
 			}
-			double totalcheck = maxcheck;
+			/*double totalcheck = maxcheck;
 			if (nextcheck > 0) {
 				if (nextcheck == .01) {
 					nextcheck = nextcheck - .01;
 				}
 				totalcheck = totalcheck + 2.0 + nextcheck;
+			}*/
+			/*updateSync(i);
+			double tsMes = ts.getTop() / ts.getBottom() * 4.0;*/
+			
+			int currentSp =  calcSpLength(i,maxcheck,sss.size(),currentsections);
+			
+			if (currentSp == 0) {
+				i = lastAct + 1;
 			}
-			double tsMes = ts.getTop() / ts.getBottom() * 4.0;
-			int currentSp =  (int) Math.round(tsMes * totalcheck * resolution + posEarly + posLate);
-			if (nextcheck > 0) {
+			
+			/*if (nextcheck > 0) {
 				if (nextcheck == .01) {
 					nextcheck = nextcheck - .01;
 				}
-				double spcheck = spLeft (i,nnn.getTime(),maxcheck+nextcheck);
-				if (spcheck > 6.0) {
-					spcheck = spcheck - 6.0;
-					int splength = (int) Math.round(tsMes * spcheck * resolution);
-					fullSp = currentSp - splength;
-				}
-				else if ( nextcheck < 0) {
-					continue;
+				SortedMap<Integer,SyncEvent> subMapts = tsMap.subMap(i, nnn.getTime());
+				if (subMapts.size() == 0) {
+					double spcheck = spLeft (i,nnn.getTime(),maxcheck+nextcheck);
+					if (spcheck > 6.0) {
+						spcheck = spcheck - 6.0;
+						int splength = (int) Math.round(tsMes * spcheck * resolution);
+						fullSp = currentSp - splength;
+					}
+					else if ( nextcheck < 0) {
+						continue;
+					}
+					else {
+						fullSp = currentSp;
+					}
 				}
 				else {
-					fullSp = currentSp;
+					
 				}
-			} 
-			else {
-				fullSp = currentSp;
+			}*/
+			//else {
+			//fullSp = currentSp;
+			//}
+			
+			int max = currentSp + i;
+
+			//updateSync(max);
+			/*if (squeeze) {
+				max = max + (int)posLate;
+			}*/
+			
+			StarSection last =  sss.get(sss.size()-1);
+			
+			int lastact = getActivationNote(last.getTime(), last.getLength());
+			if (lastact > max) {
+				continue;
 			}
 			
-			int max = fullSp + i;
-			
-			if (nnn!= null) {
-				int max2 = nnn.getTime() + maxsp - (int) posLate;
-				if (max > max2) {
-					max = max2;
-				}
+			int sqLen = 0;
+			if (squeeze) {
+				sqLen = (int) (posEarly + posLate);
 			}
+			//splength = splength + sqLen;
+			updateSync(last.getTime()+last.getLength());
+			double tsMes = ts.getTop() / ts.getBottom() * 4;
+			int maxsplength = (int) Math.ceil(tsMes * 8 * resolution);
+			maxsplength = maxsplength + sqLen;
+			
+			if (i > max)
+				System.out.println("");
 			
 			int sectionScore = getValueSum(i,max);
 			if (sectionScore > highestScore) {
-				SortedMap<Integer,StarSection> subMap = starMap.subMap(i,max);
-				if (subMap.size() >= 1 && nnn==null) {
+				StarSection lastss = sss.get(sss.size()-1);
+				int lastactive = getActivationNote(lastss.getTime(), lastss.getLength());
+				if (lastactive > max) {
+					System.out.println("");
+				}
+				SortedMap<Integer,StarSection> subMap = starMap.subMap(lastactive,max);
+				if (subMap.size() >= 1) {
 					StarSection ss = subMap.get(subMap.firstKey());
 					if (ss.returnLength() > 0) {
 						int sLen = getLengthSum(ss.getTime(),max);
@@ -1778,9 +1861,10 @@ public class StarPather {
 				Note note = noteMap.get(i);
 				Note note2 = noteMap.get(activationPoint);
 				if (note2 == null && note != null) {
-
-					SortedMap<Integer,StarSection> subMap = starMap.subMap(i,max);
-					if (subMap.size() >= 1 && nnn==null) {
+					StarSection lastss = sss.get(sss.size()-1);
+					int lastactive = getActivationNote(lastss.getTime(), lastss.getLength());
+					SortedMap<Integer,StarSection> subMap = starMap.subMap(lastactive,max);
+					if (subMap.size() >= 1) {
 						StarSection ss = subMap.get(subMap.firstKey());
 						if (ss.returnLength() > 0) {
 							int sLen = getLengthSum(ss.getTime(),max);
@@ -1822,14 +1906,165 @@ public class StarPather {
 		if (spsplit < 0) {
 			return 0;
 		}
+		
+		SortedMap<Integer,SyncEvent> subMapts = tsMap.subMap(active, current);
+		if (subMapts.size() > 0) {
+			double currentsp = sp;
+			int curr = active;
+			updateSync(active);
+			double tsMes = ts.getTop() / ts.getBottom() * 4;
+			for (Map.Entry<Integer, SyncEvent> entry : subMapts.entrySet()) {
+				SyncEvent e = entry.getValue();
+				int endcurrent = e.getInd();
+				int spspl = endcurrent - curr;
+				double meselapsed = spspl / resolution / tsMes;
+				currentsp = currentsp - meselapsed;
+				curr = endcurrent;
+				updateSync(curr);
+				tsMes = ts.getTop() / ts.getBottom() * 4;
+			}
+			spsplit = current - curr;
+			
+			double meselapsed = spsplit / resolution / tsMes;
+			newsp = currentsp - meselapsed;
 
+			return newsp;
+			}
 		else {
+			updateSync(current);
 			double tsMes = ts.getTop() / ts.getBottom() * 4;
 			double meselapsed = spsplit / resolution / tsMes;
 			newsp = sp - meselapsed;
 
 			return newsp;
 		}
+	}
+	
+	public double returnSpLength (int l, int t) {
+		//Need to figure out way to adjust if bpm or ts changes in middle of hold note
+		double lv = 0.0;
+
+		if (l > 0) {
+			updateSync(t);
+			
+			if (earlyWhammy) {
+				l = (int) (l + posEarly);
+			}
+			lv = (double) l / resolution;
+			lv = lv / 3.75;
+		}
+		
+		double whammy = 1.0;
+		
+		if (noWhammy) {
+			whammy = 0;
+		}
+		else if (badWhammy) {
+			whammy = 0.5;
+		}
+		else if (lazyWhammy) {
+			whammy = 0.8;
+		}
+
+		return lv * whammy;
+	}
+	
+	
+	public int calcSpLength (int active, double sp, int sectionsize, int currentsections) {
+		int splength = 0;
+		double currentsp = sp;
+		
+		updateSync(active);
+		double tsMes = ts.getTop() / ts.getBottom() * 4;
+		
+		splength = (int) Math.ceil(tsMes * currentsp * resolution);
+		if (squeeze)
+			splength = splength + (int)posEarly;
+		
+		SortedMap<Integer,SyncEvent> subMapts = tsMap.subMap(active, active+splength);
+		if (subMapts.size() > 0) {
+			int newsplength = 0;
+			if (squeeze)
+				newsplength = newsplength + (int)posEarly;
+			int current = active;
+			for (Map.Entry<Integer, SyncEvent> entry : subMapts.entrySet()) {
+				SyncEvent e = entry.getValue();
+				int endcurrent = e.getInd();
+				double spcheck = spLeft(current,endcurrent,currentsp);
+				if (spcheck <= 0) {
+					continue;
+				}
+				newsplength = newsplength + (int) Math.ceil(tsMes * (currentsp - spcheck) * resolution);
+				currentsp = spcheck;
+				current = endcurrent;
+				updateSync(current);
+				tsMes = ts.getTop() / ts.getBottom() * 4;
+			}
+			newsplength = newsplength + (int) Math.ceil(tsMes * (currentsp) * resolution);
+			splength = newsplength;	
+			
+			if (splength <= 0) {
+				System.out.println("");
+			}
+		}
+		
+			SortedMap<Integer,StarSection> subMapSs = starMap.subMap(active, active+splength);
+			int sssize = subMapSs.size();
+			int orsplength = splength;
+			double orsp = currentsp;
+			if (sssize + currentsections > sectionsize) {
+				return 0;
+			}
+			while (sssize > 0) {
+				int mapcounter = 0;
+				for (Map.Entry<Integer, StarSection> entry : subMapSs.entrySet()) {
+					StarSection ss = entry.getValue();
+					double extra = ss.returnLength();
+					
+					SortedMap<Integer,Note> subMapno = noteMap.subMap(ss.getTime(), ss.getTime()+ss.getLength());
+					Note not = subMapno.get(subMapno.lastKey());
+					if (not.getLength() > 0) {
+						extra = extra - returnSpLength(not.getLength(), not.getTime());
+					}
+					
+					double spcheck = spLeft(active,ss.getTime(),currentsp+extra);
+					double penalty = 0;
+					if (spcheck > 6.0) {
+						double over = spcheck - 6.0;
+						if (over > 2.0) {
+							over = 2.0;
+						}
+						//extra = extra - over;
+						penalty = over;
+					}
+					currentsp = currentsp + 2.0 + ss.returnLength() - penalty;
+					splength = (int) Math.ceil(tsMes * currentsp * resolution);
+					if (squeeze)
+						splength = splength + (int)posEarly;
+					mapcounter++;
+					if (splength <= 0) {
+						System.out.println("");
+					}	
+				}
+				subMapSs = starMap.subMap(active, active+splength);
+				if (subMapSs.size() + currentsections > sectionsize) {
+					return 0;
+				}
+				sssize = subMapSs.size() - mapcounter;
+				if (sssize > 0) {
+					splength = orsplength;
+					currentsp = orsp;
+				}
+			}
+			updateSync(active+splength);
+			if (squeeze)
+				splength = splength + (int)posLate;
+		
+		if (splength <= 0) {
+			System.out.println("");
+		}	
+		
+		return splength;
 	}
 	
 	public int getActivationNote (int time, int length) {
@@ -2116,7 +2351,7 @@ public class StarPather {
 						}
 
 						double tsMes = ts.getTop() / ts.getBottom() * 4;
-						int splength = (int) Math.round(tsMes * sp * resolution);
+						int splength = (int) Math.ceil(tsMes * sp * resolution);
 						int end = active + splength;
 
 						if (!lastSyncEvent) {
@@ -2397,7 +2632,7 @@ public class StarPather {
 	public int checkSync (int active, int end, double sp) {
 
 		double tsMes = ts.getTop() / ts.getBottom() * 4;
-		int splength = (int) Math.round(tsMes * sp * resolution);
+		int splength = (int) Math.ceil(tsMes * sp * resolution);
 
 		ArrayList<SyncEvent> syncChange = new ArrayList<SyncEvent>();
 
@@ -2428,7 +2663,7 @@ public class StarPather {
 					splengthsplit.add(spsplit);
 				}
 				lastSyncIndex = updateSync(syncChange.get(i).getInd(),lastSyncIndex);
-				int spl = (int) Math.round(tsMes * newsp * resolution);
+				int spl = (int) Math.ceil(tsMes * newsp * resolution);
 				splengthsplit.add(spl);
 			}
 
@@ -2496,7 +2731,7 @@ public class StarPather {
 								if (newsp > 8) {
 									newsp = 8;
 								}
-								int splength2 = (int) Math.round(tsMes * newsp * resolution);
+								int splength2 = (int) Math.ceil(tsMes * newsp * resolution);
 								end = nlList.get(i).getTime() + splength2;
 								end = checkSync(nlList.get(i).getTime(),end,newsp);
 								spused = spused + lv2;
@@ -2507,7 +2742,7 @@ public class StarPather {
 						if (newsp > 8) {
 							newsp = 8;
 						}
-						int splength2 = (int) Math.round(tsMes * newsp * resolution);
+						int splength2 = (int) Math.ceil(tsMes * newsp * resolution);
 						end = t + l + splength2;
 						end = checkSync(t,end,newsp);
 						ssn.setMeasures(-100);
@@ -2519,7 +2754,7 @@ public class StarPather {
 						if (newsp > 8) {
 							newsp = 8;
 						}
-						int splength2 = (int) Math.round(tsMes * newsp * resolution);
+						int splength2 = (int) Math.ceil(tsMes * newsp * resolution);
 						end = t + l + splength2;
 						end = checkSync(t,end,newsp);
 						ssn.setMeasures(-100);
@@ -2586,7 +2821,7 @@ public class StarPather {
 								if (newsp > 8) {
 									newsp = 8;
 								}
-								int splength2 = (int) Math.round(tsMes * newsp * resolution);
+								int splength2 = (int) Math.ceil(tsMes * newsp * resolution);
 								end = nlList.get(i).getTime() + splength2;
 								end = checkSync(nlList.get(i).getTime(),end,newsp);
 								//spused = spused + lv2;
@@ -2597,7 +2832,7 @@ public class StarPather {
 						if (newsp > 8) {
 							newsp = 8;
 						}
-						int splength2 = (int) Math.round(tsMes * newsp * resolution);
+						int splength2 = (int) Math.ceil(tsMes * newsp * resolution);
 						end = t + l + splength2;
 						end = checkSync(t,end,newsp);
 						//ssn.setMeasures(-100);
@@ -2609,7 +2844,7 @@ public class StarPather {
 						if (newsp > 8) {
 							newsp = 8;
 						}
-						int splength2 = (int) Math.round(tsMes * newsp * resolution);
+						int splength2 = (int) Math.ceil(tsMes * newsp * resolution);
 						end = t + l + splength2;
 						end = checkSync(t,end,newsp);
 						//ssn.setMeasures(-100);
@@ -2977,18 +3212,15 @@ public class StarPather {
 			if (notesLength > 0) {
 				SortedMap<Integer,Note> nlMap = noteMap.subMap(time, time+length);
 				int nn = 0;
-				if (posEarly == 0) {
-					if (!lastSyncEvent) {
-						lastSyncIndex = updateSync(time,lastSyncIndex);
-					}
-				}
+				//updateSync(time);
+				
 				for (Map.Entry<Integer, Note> entry : nlMap.entrySet())  {
 					Note n = entry.getValue();
 					if (n.length>0) {
 						nn++;
 					}
 				}
-				double nnn = nn * posEarly;
+				double nnn = nn * posEarly * 1.5;
 				if (earlyWhammy) {
 					notesLength = (int) (notesLength + nnn);
 				}
@@ -3143,7 +3375,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (7).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (6).chart");
 		InputStream is = null;
 
 		try {

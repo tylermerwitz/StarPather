@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,6 +36,7 @@ public class StarPather {
 	private int lastBestScore;
 	private int bestSpLength = 0;
 	int soloBonus = 0;
+	DecimalFormat df = new DecimalFormat("#.##");
 
 	protected String name = "";
 	private StringBuffer output = new StringBuffer();
@@ -758,7 +760,7 @@ public class StarPather {
 					}
 					
 					double tsMes = 1.0 * ts.getTop() / ts.getBottom() * 4;
-					String activeDetail = activeNumber + " (" + (bestSpLength/resolution/tsMes) + " SP)\n";
+					String activeDetail = activeNumber + " (" + df.format(bestSpLength/resolution/tsMes) + " SP)\n";
 					//pathDetail.append(bestActivation+"\n");
 
 					Note activeNote = noteMap.get(bestActivation);
@@ -1152,7 +1154,7 @@ public class StarPather {
 							actiMeasures = 100;
 						}
 						//double mesDis = (1.0 * splength) /( 1.0 * resolution)/tsMes;
-						String activeDetail = activeNumber + " (" + (actiMeasures) + "% SP)\n";
+						String activeDetail = activeNumber + " (" + df.format(actiMeasures) + "% SP)\n";
 						//pathDetail.append(bestActivation+"\n");
 
 						Note activeNote = noteMap.get(a.begin);
@@ -1419,7 +1421,7 @@ public class StarPather {
 		double beatsBefore = 1.0 * activeBefore/resolution;
 		
 		if (!onNote && beatsBefore >= 0.5) {
-			activeDetail = beatsBefore + " Beats Before ";
+			activeDetail = df.format(beatsBefore) + " Beats Before ";
 		}
 		activeDetail = activeDetail + fc + " " + noteFret;
 
@@ -3375,7 +3377,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (6).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (25).chart");
 		InputStream is = null;
 
 		try {
@@ -3387,9 +3389,9 @@ public class StarPather {
 		
 		//test.test();
 
-		test.setEarlyWhammy(true);
-		test.setSqueeze(true);
-		//test.setLazyWhammy(true);
+		//test.setEarlyWhammy(true);
+		//test.setSqueeze(true);
+		test.setLazyWhammy(true);
 		test.parseFile(is);
 		test.printStarMap();
 		//ArrayList<String> combos = new ArrayList<String>();

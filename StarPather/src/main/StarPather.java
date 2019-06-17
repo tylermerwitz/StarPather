@@ -123,6 +123,9 @@ public class StarPather {
 	}
 	
 	public void updateSync (int time) {
+		if (time == 0) {
+			time++;
+		}
 		SortedMap<Integer,SyncEvent> subMap = tsMap.subMap(tsMap.firstKey(), time);
 		SyncEvent e = subMap.get(subMap.lastKey());
 		
@@ -393,9 +396,8 @@ public class StarPather {
 
 						int time = Integer.parseInt(theline.substring(offset,split).trim());
 
-						
-						updateSync(time);
-						
+						if (tsMap.size() > 0 && bpmMap.size() > 0)
+							updateSync(time);
 
 						if (theline.charAt(split+2) == 'N') {
 
@@ -664,311 +666,92 @@ public class StarPather {
 		return pathScore;
 	}
 	
-	public int noSqueezePathAlt () {
+	public void bestPathEver () {
+		if (starMap.size() < 23) {
+			noSqueezePath();
+			System.out.println(getOutput());
+		}
+		else {
+			int n = starMap.size();
+			ArrayList<ArrayList<Integer>> comboList = new ArrayList<ArrayList<Integer>>();
 
+			checkTensCombos(comboList,n);
+			
+			int bestScore = 0;
+			String bestDetail = "";
+			
+			for (int i = 0; i < comboList.size(); i++) {
+				int score = noSqueezePathAlt(comboList.get(i));
+				String currentDetail = getOutput();
+				
+				if (score > bestScore) {
+					bestScore = score;
+					bestDetail = currentDetail;
+				}
+			}
+			
+			System.out.println(bestDetail);
+		}
+	}
+	
+	public int noSqueezePathAlt (ArrayList<Integer> comList) {
 
 		try {
+			output.replace(0, output.length()-1, "");
+			
 			int pathScore = getTotalSum();
-
-			ArrayList<String> combos = new ArrayList<String>();
-			checkStarCombos(combos);
-			int bestComboScore = 0;
-			String bestPath = "";
-			String bestPathDetail = "";
-
-			ArrayList<StarSection> ssections = new ArrayList<StarSection>();
+			
+			int totalBestComboScore = 0;
+			String totalBestPath = "";
+			String totalBestPathDetail = "";
+			
+			ArrayList<StarSection> sssections = new ArrayList<StarSection>();
 			for (Map.Entry<Integer, StarSection> entry : starMap.entrySet()) {
 				StarSection ss = entry.getValue();
-				ssections.add(ss);
+				sssections.add(ss);
 			}
-
-			for (int i = 0; i < combos.size(); i++) {
-				String s = combos.get(i);
-				
-				int currentSp = 0;
-				int totalSp = 0;
-				int comboScore = 0;
-				setTakeNext(false);
-				setNextSp(0);
-				
-				String actualPath = "";
-				StringBuffer pathDetail = new StringBuffer();
-				
-				boolean skipPath = false;
-				setTakeNext(false);
-				setNextSp(0.0);
-				
-				lastBestScore = 0;
-
-				for (int j = 0; j < s.length(); j++) {
-					int x = Character.getNumericValue(s.charAt(j));
-					currentSp = x;
-					totalSp = totalSp + x;
-					bestSpLength = 0;
-					double sp = 0.0;
-					int active = 0 ;
-					//bestScore = 0;
-					ArrayList<Integer> activations = new ArrayList<Integer>();
-					ArrayList<StarSection> spValues = new ArrayList<StarSection>();
-					boolean secondLast = false;
-
-					for (int k = totalSp - currentSp; k < totalSp; k++ ) {
-						StarSection ss = ssections.get(k);					
-						spValues.add(ss);
-
-						/*if (sp > 8) {
-							sp = 8;
-						}*/
-
-						activations.add(getActivationNote(ss.getTime(),ss.getLength()));
-						}
-					
-					if (activations.size()==0) {
-						skipPath = true;
-						j = s.length();
-					}
-				
-					int firstActive = findFirstAct(spValues);
-					if (firstActive == -1.0 ||firstActive == 0.0 ) {
-						skipPath = true;
-						j = s.length();
-					}
-					
-					int lastActive = findLastAct(spValues);
-					
-					int bestActivation = getHighestScore(firstActive,lastActive,spValues);
-					
-					if (bestActivation == 0) {
-						if (activations.size()==0) {
-							skipPath = true;
-							j = s.length();
-						}
-					}
-
-					int lastStar = activations.get(activations.size()-1);
-					String activeNumber = "";
-					if (bestActivation < lastStar) {
-						for (int m = 0; m < activations.size(); m++) {
-							if (bestActivation < activations.get(m)) {
-								activeNumber = m + "(" + (currentSp - m) + ")";
-								m = activations.size();
-							}
-						}
-					}
-					else {
-						activeNumber = "" + currentSp;
-					}
-					
-					double tsMes = 1.0 * ts.getTop() / ts.getBottom() * 4;
-					String activeDetail = activeNumber + " (" + df.format(bestSpLength/resolution/tsMes) + " SP)\n";
-					//pathDetail.append(bestActivation+"\n");
-
-					Note activeNote = noteMap.get(bestActivation);
-					int afterStar = Integer.parseInt(Character.toString(activeNumber.charAt(0)));
-
-					boolean onNote = true;
-					int activeBefore = 0;
-					if (activeNote == null) {
-						SortedMap<Integer,Note> subMap5 = noteMap.subMap(bestActivation,noteMap.lastKey());
-						activeNote = subMap5.get(subMap5.firstKey());
-						onNote = false;
-						activeBefore = activeNote.getTime() - bestActivation;
-					}
-
-					if (afterStar != 0) {
-						int mapStart = activations.get(afterStar - 1);
-						SortedMap<Integer,Note> subMap6 = noteMap.subMap(mapStart+1,activeNote.getTime()+1);
-						String noteFret = activeNote.getFret();
-						activeDetail = activeDetail + fretCounter(subMap6,noteFret,activeBefore,onNote) + "\n";
-						
-						//pathDetail.append(activeDetail+"\n");
-						
-						if (squeeze) {
-							SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,activeNote.getTime()+bestSpLength);
-							noteFret = subMap7.get(subMap7.lastKey()).getFret();
-							activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret,0,onNote) + "\n";
-							//pathDetail.append("Squeeze " + activeDetail +"\n");
-						}
-						
-						activeDetail = activeDetail + "\n";
-						//boolean perserve = takeFromNext;
-						//int lastBestPre = lastBestScore;
-						
-						/*if (testAnother) {
-							//tempBestDetail = tempBestDetail + activeDetail;
-							int currentBestCombo = bestScore + lastBestScore;
-							
-							int testBest1 = getHighestScore(testFirstAct,testLastAct,lastSpLength,tempMaxSpLength,tempSpValues);
-							splength = (int) (splength + nextSub);
-							int testBest2 = getHighestScore(firstActive,lastActive,splength,maxsplength,spValues);
-							int testCombo = bestScore + lastBestScore;
-							
-							if (testCombo > currentBestCombo) {
-								//mesDis = (1.0 * lastSpLength) /( 1.0 * resolution)/tsMes;
-								tempBestDetail = firstTest + "\n";
-								activeNote = noteMap.get(testBest1);
-								activeBefore = 0;
-								onNote = true;
-								if (activeNote == null) {
-									SortedMap<Integer,Note> subMap51 = noteMap.subMap(testBest1,noteMap.lastKey());
-									activeNote = subMap51.get(subMap51.firstKey());
-									onNote = false;
-									activeBefore = activeNote.getTime() - testBest1;
-								}
-								afterStar = Integer.parseInt(Character.toString(firstTest.charAt(0)));
-								SortedMap<Integer,Note> subMap10 = noteMap.subMap(firstMapStart+1,activeNote.getTime()+1);
-								noteFret = activeNote.getFret();
-								tempBestDetail = tempBestDetail + fretCounter(subMap10,noteFret,activeBefore,onNote) + "\n";
-								
-								if (squeeze) {
-									SortedMap<Integer,Note> subMap11 = noteMap.subMap(activeNote.getTime()+1,activeNote.getTime()+lastSpLength);
-									noteFret = subMap11.get(subMap11.lastKey()).getFret();
-									tempBestDetail = tempBestDetail + "Squeeze " +fretCounter(subMap11,noteFret,0,onNote) + "\n\n";
-									//pathDetail.append("Squeeze " + activeDetail +"\n");
-								}
-								
-								pathDetail.append(tempBestDetail);
-								
-								if (actualPath.length() != 0) {
-									actualPath = actualPath + ", ";
-								}
-								actualPath = actualPath + firstTest;
-								comboScore = comboScore + lastBestScore;
-								
-								//mesDis = (1.0 * splength) /( 1.0 * resolution)/tsMes;
-								activeDetail = activeNumber + "\n";
-								activeNote = noteMap.get(testBest2);
-								activeBefore = 0;
-								onNote = true;
-								if (activeNote == null) {
-									SortedMap<Integer,Note> subMap52 = noteMap.subMap(testBest2,noteMap.lastKey());
-									activeNote = subMap52.get(subMap52.firstKey());
-									onNote = false;
-									activeBefore = activeNote.getTime() - testBest2;
-								}
-								afterStar = Integer.parseInt(Character.toString(activeNumber.charAt(0)));
-								SortedMap<Integer,Note> subMap12 = noteMap.subMap(mapStart+1,activeNote.getTime()+1);
-								noteFret = activeNote.getFret();
-								activeDetail = activeDetail + fretCounter(subMap12,noteFret,activeBefore,onNote) + "\n";
-								
-								if (squeeze) {
-									SortedMap<Integer,Note> subMap13 = noteMap.subMap(activeNote.getTime()+1,activeNote.getTime()+lastSpLength);
-									noteFret = subMap13.get(subMap13.lastKey()).getFret();
-									activeDetail = activeDetail + "Squeeze " +fretCounter(subMap13,noteFret,0,onNote) + "\n\n";
-									//pathDetail.append("Squeeze " + activeDetail +"\n");
-								}
-							}
-							
-							else {
-								setTakeNext(perserve);
-								comboScore = comboScore + lastBestPre;
-								if (actualPath.length() != 0) {
-									actualPath = actualPath + ", ";
-								}
-								actualPath = actualPath + firstTest;
-								pathDetail.append(tempBestDetail);
-							}
-							
-							tempBestDetail = "";
-							testFirstAct = 0;
-							lastSpLength =  0;
-							firstTest =  "";
-							firstMapStart =  0;
-							testAnother = false;
-							maxsplength = 0;
-							tempSpValues.clear();
-						}
-						
-						if (takeFromNext && ssections.size() > totalSp) {
-							tempBestDetail = tempBestDetail + activeDetail;
-							testFirstAct = firstActive;
-							lastSpLength = splength;
-							firstTest = activeNumber;
-							firstMapStart = mapStart;
-							tempSpValues.clear();
-							for (int ti = 0; ti < spValues.size(); ti++) {
-								tempSpValues.add(spValues.get(ti));
-							}
-							tempMaxSpLength = maxsplength;
-							
-							StarSection nextSs = ssections.get(totalSp);
-							int firstLen = 0;
-							if (nextSs.getTime() >= activeNote.getTime()+splength) {
-								setTakeNext(false);
-							}
-							if (takeFromNext) {
-								SortedMap<Integer,Note> subMap8 = noteMap.subMap(nextSs.getTime(),activeNote.getTime()+splength);
-								for (Map.Entry<Integer, Note> entry : subMap8.entrySet()) {
-									Note nn = entry.getValue();
-									if (firstLen == 0 && nn.getLength() > 0) {
-										firstLen = nn.getTime();
-									}
-								}
-								if (firstLen == 0) {
-									takeFromNext = false;
-								}
-								else {
-									SortedMap<Integer,Note> subMap99 = noteMap.subMap(nextSs.getTime(),firstLen+1);
-									testLastAct = subMap99.get(subMap99.lastKey()).getTime() - splength;
-								}
-							}
-						}*/
-						pathDetail.append(activeDetail);
-						if (actualPath.length() != 0) {
-							actualPath = actualPath + ", ";
-						}
-						actualPath = actualPath + activeNumber;
-						comboScore = comboScore + bestScore;
-						
-						
-					}
-				}
-				if (skipPath) {
-					continue;
-				}
-				//System.out.println(pathHeader);
-				//System.out.println(pathDetail.toString());
-				if (comboScore > bestComboScore) {
-					bestComboScore = comboScore;
-					bestPath = actualPath;
-					bestPathDetail = pathDetail.toString();
-				}
-			}
-			pathScore = pathScore + bestComboScore + soloBonus;
-			output.append("Best Path: " + bestPath + "\n");
-			output.append("Score = " + pathScore + "\n\n");
-			output.append(bestPathDetail);
-			return pathScore;
-		} catch (Exception e) {
 			
-			e.printStackTrace();
-			return 0;
-		}
+			ArrayList<SortedMap<Integer,StarSection>> starSubMaps = new ArrayList<SortedMap<Integer,StarSection>>();
+			
+			int total = 0;
+			for (int smi = 0; smi < comList.size(); smi++) {
+				int current = comList.get(smi);
+				total = total + current;
+				starSubMaps.add(new TreeMap<Integer,StarSection>());
+				for (int smj = total - current; smj < total - 1; smj++) {
+					StarSection ss = sssections.get(smj);
+					starSubMaps.get(smi).put(ss.getTime(), ss);
+				}
+			}
 
-	
-	}
-
-	public int noSqueezePath () {
-
-		try {
-			int pathScore = getTotalSum();
-
+			
+			for (int smk = 0; smk < starSubMaps.size(); smk++) {
+				
+				int bestComboScore = 0;
+				String bestPath = "";
+				String bestPathDetail = "";
+				
+				SortedMap<Integer,StarSection> starSub = starSubMaps.get(smk);
+				
+				int nextStarMapSection = 0;
+				
+				if (smk + 1 < starSubMaps.size()) {
+					SortedMap<Integer,StarSection> subMap = starMap.subMap(starSub.lastKey()+1,starMap.lastKey());
+					nextStarMapSection = subMap.firstKey();
+				}
+				
+				ArrayList<StarSection> ssections = new ArrayList<StarSection>();
+				for (Map.Entry<Integer, StarSection> entry : starSub.entrySet()) {
+					StarSection ss = entry.getValue();
+					ssections.add(ss);
+				}
+			
 			ArrayList<String> combos = new ArrayList<String>();
-			checkStarCombos(combos);
+			checkStarCombos(combos,starSub);
+			
 			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 			Date date = new Date();
-			System.out.println("Permutation finished at: " + dateFormat.format(date));
-			int bestComboScore = 0;
-			String bestPath = "";
-			String bestPathLiteral = "";
-			String bestPathDetail = "";
-			int lastSpLength = 0;
-
-			ArrayList<StarSection> ssections = new ArrayList<StarSection>();
-			for (Map.Entry<Integer, StarSection> entry : starMap.entrySet()) {
-				StarSection ss = entry.getValue();
-				ssections.add(ss);
-			}
+			System.out.println("Permutation " + smk + " finished at: " + dateFormat.format(date));
 			
 			SortedMap<String,Activation> acts = new TreeMap<String,Activation>();
 
@@ -1011,7 +794,7 @@ public class StarPather {
 					if (acts.containsKey(key)) {
 						Activation a = acts.get(key);
 						pathDetail.append(a.activeDetail);
-						if (actualPath.length() != 0) {
+						if (actualPath.length() != 0 || totalBestPath.length() != 0) {
 							actualPath = actualPath + ", ";
 						}
 						actualPath = actualPath + a.activeNumber;
@@ -1106,9 +889,22 @@ public class StarPather {
 							int last = noteMap.lastKey();
 							Note lastNote = noteMap.get(last);
 							lastActive = lastNote.getTime() - splength;
-							SortedMap<Integer,Note> subMap4 = noteMap.subMap(lastActive,noteMap.lastKey());
-							if (!subMap4.isEmpty())
-								lastActive = subMap4.firstKey();
+							if (j == s.length() - 1 && nextStarMapSection!= 0) {
+								lastActive = nextStarMapSection - splength;
+							}
+							if (firstActive == lastActive) {
+								lastActive++;
+							}
+							else if (firstActive > lastActive) {
+								skipPath = true;
+								continue;
+							}
+							else
+							 {
+								SortedMap<Integer,Note> subMap4 = noteMap.subMap(lastActive,noteMap.lastKey());
+								if (!subMap4.isEmpty())
+									lastActive = subMap4.firstKey();
+							 }
 						}
 
 						Activation a = getHighestScore(firstActive,lastActive,splength,maxsplength,spValues);
@@ -1313,7 +1109,7 @@ public class StarPather {
 						}*/
 							a.setActiveDetail(activeDetail);
 							pathDetail.append(activeDetail);
-							if (actualPath.length() != 0) {
+							if (actualPath.length() != 0 || smk > 0) {
 								actualPath = actualPath + ", ";
 							}
 							actualPath = actualPath + activeNumber;
@@ -1334,16 +1130,488 @@ public class StarPather {
 				if (comboScore > bestComboScore) {
 					bestComboScore = comboScore;
 					bestPath = actualPath;
-					bestPathLiteral = s;
+					//bestPathLiteral = s;
 					bestPathDetail = pathDetail.toString();
 				}
+				}
+			
+			totalBestComboScore = totalBestComboScore + bestComboScore;
+			totalBestPath = totalBestPath + bestPath;
+			totalBestPathDetail = totalBestPathDetail + bestPathDetail;
 			}
-			pathScore = pathScore + bestComboScore + soloBonus;
-			output.append("Best Path: " + bestPath + "\n");
+			pathScore = pathScore + totalBestComboScore + soloBonus;
+			output.append("Best Path: " + totalBestPath + "\n");
 			output.append("Score = " + pathScore + "\n\n");
-			output.append(bestPathDetail);
+			output.append(totalBestPathDetail);
+			return totalBestComboScore;
+		}
+			catch (Exception e) {
+			
+			e.printStackTrace();
+			return 0;
+		}
+
+	}
+
+	public int noSqueezePath () {
+
+		try {
+			int pathScore = getTotalSum();
+			
+			int totalBestComboScore = 0;
+			String totalBestPath = "";
+			String totalBestPathDetail = "";
+			
+			ArrayList<StarSection> sssections = new ArrayList<StarSection>();
+			for (Map.Entry<Integer, StarSection> entry : starMap.entrySet()) {
+				StarSection ss = entry.getValue();
+				sssections.add(ss);
+			}
+			
+			ArrayList<SortedMap<Integer,StarSection>> starSubMaps = new ArrayList<SortedMap<Integer,StarSection>>();
+			
+			if (starMap.size() > 20) {
+				int d = starMap.size() / 10;
+				int r = starMap.size() % d ;
+				int n = starMap.size() / d;
+				
+				for (int smi = 0; smi < d; smi++) {
+					int range = 0;
+					if (smi + 1 == d) {
+						range = range + r;
+					}
+					starSubMaps.add(new TreeMap<Integer,StarSection>());
+					for (int smj = smi * n; smj < ((smi + 1) * n) + range; smj++) {
+						StarSection ss = sssections.get(smj);
+						starSubMaps.get(smi).put(ss.getTime(), ss);
+					}
+				}
+			}
+			else {
+				starSubMaps.add(starMap);
+			}
+			
+			for (int smk = 0; smk < starSubMaps.size(); smk++) {
+				
+				int bestComboScore = 0;
+				String bestPath = "";
+				String bestPathDetail = "";
+				
+				SortedMap<Integer,StarSection> starSub = starSubMaps.get(smk);
+				
+				int nextStarMapSection = 0;
+				
+				if (smk + 1 < starSubMaps.size()) {
+					SortedMap<Integer,StarSection> subMap = starMap.subMap(starSub.lastKey()+1,starMap.lastKey());
+					nextStarMapSection = subMap.firstKey();
+				}
+				
+				ArrayList<StarSection> ssections = new ArrayList<StarSection>();
+				for (Map.Entry<Integer, StarSection> entry : starSub.entrySet()) {
+					StarSection ss = entry.getValue();
+					ssections.add(ss);
+				}
+			
+			ArrayList<String> combos = new ArrayList<String>();
+			checkStarCombos(combos,starSub);
+			
+			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			Date date = new Date();
+			System.out.println("Permutation " + smk + " finished at: " + dateFormat.format(date));
+			
+			SortedMap<String,Activation> acts = new TreeMap<String,Activation>();
+
+			for (int i = 0; i < combos.size(); i++) {
+				String s = combos.get(i);
+				
+				int currentSp = 0;
+				int totalSp = 0;
+				int comboScore = 0;
+				
+				String actualPath = "";
+				StringBuffer pathDetail = new StringBuffer();
+				//String pathHeader = "Path " + (i+1) + ": " + s + "\n";
+				
+				boolean skipPath = false;
+				setTakeNext(false);
+				setNextSp(0.0);
+				//ArrayList<StarSection> tempSpValues = new ArrayList<StarSection>();
+				//int tempMaxSpLength = 0;
+				
+				lastBestScore = 0;
+
+				for (int j = 0; j < s.length(); j++) {
+					int x = Character.getNumericValue(s.charAt(j));
+					currentSp = x;
+					totalSp = totalSp + x;
+					String key = totalSp + "-" + currentSp;
+					double sp = 0.0;
+					int active = 0 ;
+					setBestSpLength(0);
+					//bestScore = 0;
+					ArrayList<Integer> activations = new ArrayList<Integer>();
+					ArrayList<StarSection> spValues = new ArrayList<StarSection>();
+					boolean secondLast = false;
+					
+					if (takeFromNext) {
+						key = key + "-Minus" + spFromNext;
+					}
+					
+					if (acts.containsKey(key)) {
+						Activation a = acts.get(key);
+						pathDetail.append(a.activeDetail);
+						if (actualPath.length() != 0 || totalBestPath.length() != 0) {
+							actualPath = actualPath + ", ";
+						}
+						actualPath = actualPath + a.activeNumber;
+						comboScore = comboScore + a.getScore();
+						
+						setTakeNext(a.takeFromNext);
+						setNextSp(a.spFromNext);
+					}
+
+					else {
+						for (int k = totalSp - currentSp; k < totalSp; k++ ) {
+							StarSection ss = ssections.get(k);
+
+							updateSync(ss.getTime());
+
+							double lv = ss.returnLength();
+							if (takeFromNext) {
+								lv = lv - (spFromNext/3.75);
+								setTakeNext(false);
+							}
+							sp = sp + ss.getMeasures() + lv;
+
+							if (sp < 4 && currentSp == 1 && totalSp == ssections.size()) {
+								j = s.length();
+								k = totalSp;
+								sp = 0;
+							}
+
+							spValues.add(ss);
+
+							/*if (sp > 8) {
+								sp = 8;
+							}*/
+
+							activations.add(getActivationNote(ss.getTime(),ss.getLength()));
+
+							if (sp >= 4 && k + 2 == totalSp){
+								StarSection lastSs = ssections.get(k+1);
+								int firstAct = getActivationNote(ss.getTime(),ss.getLength());
+								int secondAct = getActivationNote(lastSs.getTime(),lastSs.getLength());
+
+								updateSync(firstAct);
+
+								double currentTsMes = ts.getTop() / ts.getBottom() * 4;
+								int currentSplength = (int) Math.ceil(currentTsMes * sp * resolution);
+
+								SortedMap<Integer,Note> subMap = noteMap.subMap(firstAct,secondAct);
+								active = subMap.lastKey() - currentSplength;
+								secondLast = true;
+							}
+							else if (!secondLast){
+								active = getActivationNote(ss.getTime(),ss.getLength());
+								SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
+								active = subMap.firstKey();
+							}
+						}
+
+						updateSync(active);
+
+						double tsMes = 1.0 * ts.getTop() / ts.getBottom() * 4;
+						int splength = (int) Math.ceil(tsMes * sp * resolution);
+						int sqLen = 0;
+						if (squeeze) {
+							sqLen = (int) (posEarly + posLate);
+						}
+						splength = splength + sqLen;
+						int maxsplength = (int) Math.ceil(tsMes * 8 * resolution);
+						maxsplength = maxsplength + sqLen;
+						int firstActive = active;
+						int lastActive = 0;
+
+						if (totalSp < ssections.size()) {
+							StarSection nextSs = ssections.get(totalSp);
+							int nextSsActive = getActivationNote(nextSs.getTime(), nextSs.getLength());
+							SortedMap<Integer,Note> subMap2 = noteMap.subMap(firstActive,nextSsActive-1);
+							lastActive = subMap2.lastKey() - splength;
+							if (firstActive == lastActive) {
+								lastActive++;
+							}
+							else if (firstActive > lastActive) {
+								skipPath = true;
+								continue;
+							}
+							else {
+								SortedMap<Integer,Note> subMap3 = noteMap.subMap(firstActive,lastActive);
+								if (subMap3.size() > 0) {
+									lastActive = subMap3.lastKey();
+								}
+							}
+						}
+						else if (sp > 0){
+							int last = noteMap.lastKey();
+							Note lastNote = noteMap.get(last);
+							lastActive = lastNote.getTime() - splength;
+							if (j == s.length() - 1 && nextStarMapSection!= 0) {
+								lastActive = nextStarMapSection - splength;
+							}
+							if (firstActive == lastActive) {
+								lastActive++;
+							}
+							else if (firstActive > lastActive) {
+								skipPath = true;
+								continue;
+							}
+							else
+							 {
+								SortedMap<Integer,Note> subMap4 = noteMap.subMap(lastActive,noteMap.lastKey());
+								if (!subMap4.isEmpty())
+									lastActive = subMap4.firstKey();
+							 }
+						}
+
+						Activation a = getHighestScore(firstActive,lastActive,splength,maxsplength,spValues);
+
+						if (a.takeFromNext) {
+							splength = (int) (splength + a.getSpFromNext());
+							double spFromCheck = a.getSpFromNext();
+							Activation a2 = getHighestScore(a.begin,lastActive,splength,maxsplength,spValues);
+							while (spFromCheck < a2.getSpFromNext()) {
+								spFromCheck = a2.getSpFromNext() - 1;
+								a2 = getHighestScore(a2.begin,lastActive,splength,maxsplength,spValues);
+								if (a2.getSpFromNext() - 1 == spFromCheck) {
+									spFromCheck++;
+								}
+							}
+							a = a2;
+						}
+
+						if (activations.size()==0) {
+							continue;
+						}
+						int lastStar = activations.get(activations.size()-1);
+						String activeNumber = "";
+						if (a.begin < lastStar) {
+							for (int m = 0; m < activations.size(); m++) {
+								if (a.begin < activations.get(m)) {
+									activeNumber = m + "(" + (currentSp - m) + ")";
+									m = activations.size();
+								}
+							}
+						}
+						else {
+							activeNumber = "" + currentSp;
+						}
+						a.setActiveNumber(activeNumber);
+						int acti = Integer.parseInt(activeNumber.substring(0,1));
+						double actiMeasures = 0.0;
+						for (int act = 0; act < acti; act++) {
+							actiMeasures = actiMeasures + spValues.get(act).getMeasures() + spValues.get(act).returnLength();
+						}
+						actiMeasures = Math.round(actiMeasures / 8 * 100);
+						if (actiMeasures > 100) {
+							actiMeasures = 100;
+						}
+						//double mesDis = (1.0 * splength) /( 1.0 * resolution)/tsMes;
+						String activeDetail = activeNumber + " (" + df.format(actiMeasures) + "% SP)\n";
+						//pathDetail.append(bestActivation+"\n");
+
+						Note activeNote = noteMap.get(a.begin);
+						int afterStar = Integer.parseInt(Character.toString(activeNumber.charAt(0)));
+
+						boolean onNote = true;
+						int activeBefore = 0;
+						if (activeNote == null) {
+							SortedMap<Integer,Note> subMap5 = noteMap.subMap(a.begin,noteMap.lastKey());
+							activeNote = subMap5.get(subMap5.firstKey());
+							onNote = false;
+							activeBefore = activeNote.getTime() - a.begin;
+						}
+
+						if (afterStar != 0) {
+							int mapStart = activations.get(afterStar - 1);
+							SortedMap<Integer,Note> subMap6 = noteMap.subMap(mapStart+1,activeNote.getTime()+1);
+							String noteFret = activeNote.getFret();
+							activeDetail = activeDetail + fretCounter(subMap6,noteFret,activeBefore,onNote) + 
+									" (Beat " + (1.0 * a.begin/resolution) + ")\n";
+
+							//pathDetail.append(activeDetail+"\n");
+
+							if (squeeze && a.end > 0) {
+								SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,a.end);
+								if (subMap7.size() > 0) {
+									String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
+									activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret2,0,onNote) +
+											" (Beat " + (1.0 * subMap7.lastKey()/resolution) + ")\n";
+									//pathDetail.append("Squeeze " + activeDetail +"\n");
+								}
+							}
+
+							activeDetail = activeDetail + "\n";
+							//boolean perserve = takeFromNext;
+							//int lastBestPre = lastBestScore;
+
+							/*if (testAnother) {
+							//tempBestDetail = tempBestDetail + activeDetail;
+							int currentBestCombo = bestScore + lastBestScore;
+
+							int testBest1 = getHighestScore(testFirstAct,testLastAct,lastSpLength,tempMaxSpLength,tempSpValues);
+							splength = (int) (splength + nextSub);
+							int testBest2 = getHighestScore(firstActive,lastActive,splength,maxsplength,spValues);
+							int testCombo = bestScore + lastBestScore;
+
+							if (testCombo > currentBestCombo) {
+								//mesDis = (1.0 * lastSpLength) /( 1.0 * resolution)/tsMes;
+								tempBestDetail = firstTest + "\n";
+								activeNote = noteMap.get(testBest1);
+								activeBefore = 0;
+								onNote = true;
+								if (activeNote == null) {
+									SortedMap<Integer,Note> subMap51 = noteMap.subMap(testBest1,noteMap.lastKey());
+									activeNote = subMap51.get(subMap51.firstKey());
+									onNote = false;
+									activeBefore = activeNote.getTime() - testBest1;
+								}
+								afterStar = Integer.parseInt(Character.toString(firstTest.charAt(0)));
+								SortedMap<Integer,Note> subMap10 = noteMap.subMap(firstMapStart+1,activeNote.getTime()+1);
+								noteFret = activeNote.getFret();
+								tempBestDetail = tempBestDetail + fretCounter(subMap10,noteFret,activeBefore,onNote) + "\n";
+
+								if (squeeze) {
+									SortedMap<Integer,Note> subMap11 = noteMap.subMap(activeNote.getTime()+1,activeNote.getTime()+lastSpLength);
+									noteFret = subMap11.get(subMap11.lastKey()).getFret();
+									tempBestDetail = tempBestDetail + "Squeeze " +fretCounter(subMap11,noteFret,0,onNote) + "\n\n";
+									//pathDetail.append("Squeeze " + activeDetail +"\n");
+								}
+
+								pathDetail.append(tempBestDetail);
+
+								if (actualPath.length() != 0) {
+									actualPath = actualPath + ", ";
+								}
+								actualPath = actualPath + firstTest;
+								comboScore = comboScore + lastBestScore;
+
+								//mesDis = (1.0 * splength) /( 1.0 * resolution)/tsMes;
+								activeDetail = activeNumber + "\n";
+								activeNote = noteMap.get(testBest2);
+								activeBefore = 0;
+								onNote = true;
+								if (activeNote == null) {
+									SortedMap<Integer,Note> subMap52 = noteMap.subMap(testBest2,noteMap.lastKey());
+									activeNote = subMap52.get(subMap52.firstKey());
+									onNote = false;
+									activeBefore = activeNote.getTime() - testBest2;
+								}
+								afterStar = Integer.parseInt(Character.toString(activeNumber.charAt(0)));
+								SortedMap<Integer,Note> subMap12 = noteMap.subMap(mapStart+1,activeNote.getTime()+1);
+								noteFret = activeNote.getFret();
+								activeDetail = activeDetail + fretCounter(subMap12,noteFret,activeBefore,onNote) + "\n";
+
+								if (squeeze) {
+									SortedMap<Integer,Note> subMap13 = noteMap.subMap(activeNote.getTime()+1,activeNote.getTime()+lastSpLength);
+									noteFret = subMap13.get(subMap13.lastKey()).getFret();
+									activeDetail = activeDetail + "Squeeze " +fretCounter(subMap13,noteFret,0,onNote) + "\n\n";
+									//pathDetail.append("Squeeze " + activeDetail +"\n");
+								}
+							}
+
+							else {
+								setTakeNext(perserve);
+								comboScore = comboScore + lastBestPre;
+								if (actualPath.length() != 0) {
+									actualPath = actualPath + ", ";
+								}
+								actualPath = actualPath + firstTest;
+								pathDetail.append(tempBestDetail);
+							}
+
+							tempBestDetail = "";
+							testFirstAct = 0;
+							lastSpLength =  0;
+							firstTest =  "";
+							firstMapStart =  0;
+							testAnother = false;
+							maxsplength = 0;
+							tempSpValues.clear();
+						}
+
+						if (takeFromNext && ssections.size() > totalSp) {
+							tempBestDetail = tempBestDetail + activeDetail;
+							testFirstAct = firstActive;
+							lastSpLength = splength;
+							firstTest = activeNumber;
+							firstMapStart = mapStart;
+							tempSpValues.clear();
+							for (int ti = 0; ti < spValues.size(); ti++) {
+								tempSpValues.add(spValues.get(ti));
+							}
+							tempMaxSpLength = maxsplength;
+
+							StarSection nextSs = ssections.get(totalSp);
+							int firstLen = 0;
+							if (nextSs.getTime() >= activeNote.getTime()+splength) {
+								setTakeNext(false);
+							}
+							if (takeFromNext) {
+								SortedMap<Integer,Note> subMap8 = noteMap.subMap(nextSs.getTime(),activeNote.getTime()+splength);
+								for (Map.Entry<Integer, Note> entry : subMap8.entrySet()) {
+									Note nn = entry.getValue();
+									if (firstLen == 0 && nn.getLength() > 0) {
+										firstLen = nn.getTime();
+									}
+								}
+								if (firstLen == 0) {
+									takeFromNext = false;
+								}
+								else {
+									SortedMap<Integer,Note> subMap99 = noteMap.subMap(nextSs.getTime(),firstLen+1);
+									testLastAct = subMap99.get(subMap99.lastKey()).getTime() - splength;
+								}
+							}
+						}*/
+							a.setActiveDetail(activeDetail);
+							pathDetail.append(activeDetail);
+							if (actualPath.length() != 0 || smk > 0) {
+								actualPath = actualPath + ", ";
+							}
+							actualPath = actualPath + activeNumber;
+							comboScore = comboScore + a.getScore();
+							
+							setTakeNext(a.takeFromNext);
+							setNextSp(a.spFromNext);
+							
+							acts.put(key,a);
+						}
+					}
+				}
+				if (skipPath) {
+					continue;
+				}
+				//System.out.println(pathHeader);
+				//System.out.println(pathDetail.toString());
+				if (comboScore > bestComboScore) {
+					bestComboScore = comboScore;
+					bestPath = actualPath;
+					//bestPathLiteral = s;
+					bestPathDetail = pathDetail.toString();
+				}
+				}
+			
+			totalBestComboScore = totalBestComboScore + bestComboScore;
+			totalBestPath = totalBestPath + bestPath;
+			totalBestPathDetail = totalBestPathDetail + bestPathDetail;
+			}
+			pathScore = pathScore + totalBestComboScore + soloBonus;
+			output.append("Best Path: " + totalBestPath + "\n");
+			output.append("Score = " + pathScore + "\n\n");
+			output.append(totalBestPathDetail);
 			return pathScore;
-		} catch (Exception e) {
+		}
+			catch (Exception e) {
 			
 			e.printStackTrace();
 			return 0;
@@ -1583,9 +1851,9 @@ public class StarPather {
 
 			double sp = 0;
 			
-			if (i == 0) {
+			/*if (i == 0) {
 				System.out.println("Test");
-			}
+			}*/
 
 			for (int j = 0; j < sss.size(); j++) {
 				StarSection jss = sss.get(j);
@@ -1736,9 +2004,6 @@ public class StarPather {
 		//setNextSp(0);
 
 		for (int i = firstAct; i <= lastAct; i++) {
-			if (i == 13152) {
-				System.out.println("");
-			}
 			double maxcheck = 0;
 			double nextcheck = 0;
 			Note nnn = null;
@@ -1831,16 +2096,16 @@ public class StarPather {
 			int maxsplength = (int) Math.ceil(tsMes * 8 * resolution);
 			maxsplength = maxsplength + sqLen;
 			
-			if (i > max)
-				System.out.println("");
+			/*if (i > max)
+				System.out.println("");*/
 			
 			int sectionScore = getValueSum(i,max);
 			if (sectionScore > highestScore) {
 				StarSection lastss = sss.get(sss.size()-1);
 				int lastactive = getActivationNote(lastss.getTime(), lastss.getLength());
-				if (lastactive > max) {
+				/*if (lastactive > max) {
 					System.out.println("");
-				}
+				}*/
 				SortedMap<Integer,StarSection> subMap = starMap.subMap(lastactive,max);
 				if (subMap.size() >= 1) {
 					StarSection ss = subMap.get(subMap.firstKey());
@@ -2005,9 +2270,9 @@ public class StarPather {
 			newsplength = newsplength + (int) Math.ceil(tsMes * (currentsp) * resolution);
 			splength = newsplength;	
 			
-			if (splength <= 0) {
+			/*if (splength <= 0) {
 				System.out.println("");
-			}
+			}*/
 		}
 		
 			SortedMap<Integer,StarSection> subMapSs = starMap.subMap(active, active+splength);
@@ -2044,9 +2309,9 @@ public class StarPather {
 					if (squeeze)
 						splength = splength + (int)posEarly;
 					mapcounter++;
-					if (splength <= 0) {
+					/*if (splength <= 0) {
 						System.out.println("");
-					}	
+					}*/	
 				}
 				subMapSs = starMap.subMap(active, active+splength);
 				if (subMapSs.size() + currentsections > sectionsize) {
@@ -2062,9 +2327,9 @@ public class StarPather {
 			if (squeeze)
 				splength = splength + (int)posLate;
 		
-		if (splength <= 0) {
+		/*if (splength <= 0) {
 			System.out.println("");
-		}	
+		}*/	
 		
 		return splength;
 	}
@@ -2089,6 +2354,383 @@ public class StarPather {
 			System.out.println(measures);
 			System.out.println("\n");
 		}
+	}
+	
+	public void checkTensCombos (ArrayList<ArrayList<Integer>> CList, int n) {
+
+		int arr[] = new int [n];
+		ArrayList<int[]> comboList = new ArrayList<int[]>();
+
+		findCombinationsUtilOverTen(arr,comboList,0,n,n);
+		
+		for (int i = 0; i < comboList.size(); i++) {
+			ArrayList<int[]> allCombos = new ArrayList<int[]>();
+			ArrayList<String> goodCombos = new ArrayList<String>();
+			int[] str = new int[comboList.get(i).length];
+			int digit = 0;
+			boolean sameDigits = true;
+			/*if (starMap.size() > 9) {
+				boolean skip = false;
+				for (int q = 0; q < comboList.get(i).length; q++) {
+					int checkOverTen = comboList.get(i)[q];
+					if (checkOverTen >= 10) {
+						skip = true;
+					} 
+				}
+				if (skip) {
+					continue;
+				}
+			}*/
+			boolean skip = false;
+			for (int j = 0; j < str.length; j++) {
+				str[j] = comboList.get(i)[j];
+				if (str[j] < 10 || str[j] >= 16) {
+					skip = true;
+					j = str.length;
+				}
+				if (digit == 0) {
+					digit = str[j];
+				}
+				if (j > 0) {
+					if (str[j] != digit) {
+						sameDigits = false;
+					}
+				}
+			}
+			
+			if (skip) {
+				continue;
+			}
+			
+			if (str.length == 1) {
+				goodCombos.add(str[0] + "");
+			}
+			else if (str.length == 2) {
+				String s1 = str[0] + "";
+				String s2 = str[1] + "";
+				goodCombos.add(s1+s2);
+				goodCombos.add(s2+s1);
+			}
+			else if (sameDigits) {
+				String s = "";
+				for (int sd =0; sd < str.length; sd++) {
+					s = s + str[sd];
+				}
+				goodCombos.add(s);
+			}
+			else {
+				QuickPerm(str,goodCombos);
+			}
+			
+			for (int l = 0; l < goodCombos.size(); l++) {
+				String s = goodCombos.get(l);
+				
+				Character c = null;
+				if (s.length() % 2 != 0) {
+					c = s.charAt(s.length()-1);
+					s = s.substring(0, s.length()-2);
+				}
+				
+				CList.add(new ArrayList<Integer>());
+				
+				for (int sl = 0; sl < s.length(); sl = sl +2) {
+					String sc = "" + s.charAt(sl) + s.charAt(sl + 1);
+					CList.get(CList.size()-1).add(Integer.parseInt(sc));
+				}
+			}
+		}
+	}
+	
+	public void checkStarCombos (ArrayList<String> CList, SortedMap<Integer,StarSection> starsub) {
+
+		ArrayList<Integer> ones = CheckOnes(starsub);
+		numberOfOnes = ones.size();
+		int n = starsub.size();
+		int arr[] = new int [n];
+		ArrayList<int[]> comboList = new ArrayList<int[]>();
+
+		findCombinationsUtil(arr,comboList,0,n,n);
+		
+		if (n >= 10) {
+			ArrayList<int[]> tempList = new ArrayList<int[]>();
+			for (int in = 0; in < comboList.size(); in++) {
+				int[] temp = comboList.get(in);
+				boolean add = true;
+				for (int jn = 0; jn < temp.length; jn++) {
+					int t = temp[jn];
+					if (n > 15 && t >= 6) {
+						add = false;
+						jn = temp.length;
+					}
+					if (n > 30 && t >= 4) {
+						add = false;
+						jn = temp.length;
+					}
+				}
+				if (add) {
+					tempList.add(comboList.get(in));
+				}
+			}
+			
+			comboList.clear();
+			
+			for (int kn = 0; kn < tempList.size(); kn++) {
+				comboList.add(tempList.get(kn));
+			}
+		} 
+
+		ArrayList<String> goodCombos = new ArrayList<String>();
+		
+		for (int i = 0; i < comboList.size(); i++) {
+			ArrayList<String> allCombos = new ArrayList<String>();
+			int[] str = new int[comboList.get(i).length];
+			int digit = 0;
+			boolean sameDigits = true;
+			boolean samePlusOnes = true;
+			/*if (starMap.size() > 9) {
+				boolean skip = false;
+				for (int q = 0; q < comboList.get(i).length; q++) {
+					int checkOverTen = comboList.get(i)[q];
+					if (checkOverTen >= 10) {
+						skip = true;
+					} 
+				}
+				if (skip) {
+					continue;
+				}
+			}*/
+			for (int j = 0; j < str.length; j++) {
+				str[j] = comboList.get(i)[j];
+				if (digit == 0) {
+					digit = str[j];
+				}
+				if (j > 0) {
+					if (str[j] != digit) {
+						sameDigits = false;
+						if (digit == 1) {
+							digit = str[j];
+						}
+					}
+					if (str[j] != digit && str[j] != 1) {
+						samePlusOnes = false;
+					}
+				}
+			}
+			boolean excessOnes = false;
+			int checkOnesCount = 0;
+			for (int checkOnes = 0; checkOnes < str.length; checkOnes++) {
+				int checker = str[checkOnes];
+				if (checker == 1)
+					checkOnesCount++;
+				if (checkOnesCount > numberOfOnes + 1) {
+					excessOnes = true;
+					checkOnes = str.length;
+				}
+			}
+			if (excessOnes) {
+				continue;
+			}
+			
+			if (str.length == 1) {
+				String s = Integer.toString(str[0]);
+				if (!allCombos.contains(s)) {
+					allCombos.add(s);
+				}
+			}
+			else if (str.length == 2) {
+				String s = Integer.toString(str[0]) + Integer.toString(str[1]);
+				if (!allCombos.contains(s)) {
+					allCombos.add(s);
+				}
+				String s2 = Integer.toString(str[1]) + Integer.toString(str[0]);
+				if (!allCombos.contains(s2)) {
+					allCombos.add(s2);
+				}
+			}
+			else if (sameDigits) {
+				String s = "";
+				for (int k = 0; k < str.length; k++) {
+					s = s + Integer.toString(str[k]);
+				}
+				if (!allCombos.contains(s)) {
+					allCombos.add(s);
+				}
+			}
+			else if (samePlusOnes) {
+				if (numberOfOnes == 0 || numberOfOnes == 1) {
+					String oneCombo = "";
+					for (int iones = 0; iones < str.length; iones++) {
+						if (iones != str.length-1) {
+							oneCombo = oneCombo + digit;
+						}
+						else {
+							oneCombo = oneCombo + "1";
+						}
+					}
+					if (!allCombos.contains(oneCombo)) {
+						allCombos.add(oneCombo);
+					}
+				}
+				else if (checkOnesCount == numberOfOnes + 1) {
+					String s = "";
+					for (int strl = 0; strl < str.length; strl++) {
+						s = s + str[strl];
+					}
+					StringBuilder sb = new StringBuilder(s);
+					boolean addThis = true;
+					for (int oner = 0; oner < ones.size(); oner++) {
+						if (ones.get(oner) >= sb.length()) {
+							addThis = false;
+							continue;
+						}
+						sb.setCharAt(ones.get(oner)-1, '1');
+					}
+					if (!addThis) {
+						continue;
+					}
+					sb.setCharAt(sb.length()-1, '1');
+					s = sb.toString();
+					if (!allCombos.contains(s)) {
+						allCombos.add(s);
+					}
+				}
+				else if (checkOnesCount == numberOfOnes) {
+					String s = "";
+					for (int strl = 0; strl < str.length; strl++) {
+						s = s + str[strl];
+					}
+					StringBuilder sb = new StringBuilder(s);
+					boolean addThis = true;
+					for (int oner = 0; oner < ones.size(); oner++) {
+						if (ones.get(oner) >= sb.length()) {
+							addThis = false;
+							continue;
+						}
+						sb.setCharAt(ones.get(oner)-1, '1');
+					}
+					if (!addThis) {
+						continue;
+					}
+					s = sb.toString();
+					if (!allCombos.contains(s)) {
+						allCombos.add(s);
+					}
+				}
+				else {
+					String s = "";
+					for (int st = 0; st < str.length; st++) {
+						s = s + str[st];
+					}
+					FastPerm(s,"",allCombos);
+				}
+			}
+			else {
+				String s = "";
+				for (int st = 0; st < str.length; st++) {
+					s = s + str[st];
+				}
+				FastPerm(s,"",allCombos);
+			}
+			
+			for (int l = 0; l < allCombos.size(); l++) {
+				boolean add = true;
+				String s = allCombos.get(l);
+				if (s.contains("1")) {
+					if (numberOfOnes == 0) {
+						if (s.charAt(s.length()-1) != '1') {
+							add = false;
+						}
+					}
+					else {
+						int spNum = 0;
+						ArrayList<Integer> posOnes = new ArrayList<Integer>();
+						for (int m = 0; m < s.length(); m++) {
+							int thisSpNum = s.charAt(m);
+							spNum = spNum + thisSpNum;
+							if (thisSpNum == '1') {
+								posOnes.add(spNum);
+							}
+							if (!ones.contains(spNum)) {
+								add = false;
+							}
+						}
+					}
+				}
+				
+				if (add) {
+					ArrayList<StarSection> ssections = new ArrayList<StarSection>();
+
+					for (Map.Entry<Integer, StarSection> entry : starsub.entrySet()) {
+						StarSection ss = entry.getValue();
+						ssections.add(ss);
+					}
+
+					int currentSp = 0;
+					int totalSp = 0;
+
+					for (int p = 0; p < s.length(); p++) {
+						int x = Character.getNumericValue(s.charAt(p));
+						currentSp = x;
+						totalSp = totalSp + x;
+						double sp = 0.0;
+						int active = 0 ;
+
+						for (int y = totalSp - currentSp; y < totalSp; y++ ) {
+							StarSection ss = ssections.get(y);
+							if (!lastSyncEvent) {
+								lastSyncIndex = updateSync(ss.getTime(),lastSyncIndex);
+							}
+
+
+							double lv = ss.returnLength();
+
+							sp = sp + ss.getMeasures() + lv;
+							if (sp > 8) {
+								sp = 8;
+							}
+
+							active = getActivationNote(ss.getTime(), ss.getLength());
+							SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
+							active = subMap.firstKey();
+						}
+						
+						if (sp < 4) {
+							sp = 0;
+						}
+
+						if (!lastSyncEvent) {
+							lastSyncIndex = updateSync(active,lastSyncIndex);
+						}
+
+						double tsMes = ts.getTop() / ts.getBottom() * 4;
+						int splength = (int) Math.ceil(tsMes * sp * resolution);
+						int end = active + splength;
+
+						if (!lastSyncEvent) {
+							end = checkSync(active,end,sp);
+						}
+
+						int check = checkExtraSPNoMod(active,end,sp);
+
+						if (check != 0 && totalSp < ssections.size()) {
+							//System.out.println("Overlap");
+							add = false;
+						}
+					}
+					if (add) {
+						goodCombos.add(s);
+					}	
+				}
+
+				
+			}
+		}
+
+		//System.out.println("Total combos: " + allCombos.size());
+
+		for (int a = 0; a < goodCombos.size(); a++) {
+			CList.add(goodCombos.get(a));
+		}		
 	}
 
 	public void checkStarCombos (ArrayList<String> CList) {
@@ -2381,6 +3023,44 @@ public class StarPather {
 		for (int a = 0; a < goodCombos.size(); a++) {
 			CList.add(goodCombos.get(a));
 		}		
+	}
+	
+	public void findCombinationsUtilOverTen(int arr[], ArrayList<int[]> arr2, int index, 
+			int num, int reducedNum) 
+	{ 		
+		if (reducedNum < 0) 
+			return; 
+
+		if (reducedNum == 0) 
+		{ 
+			int tempArr[] = new int[index];
+
+			for (int i = 0; i < index; i++) {
+				if (arr[i]!=0) {
+					tempArr[i] = arr[i];
+					if (arr[i] < 10 || arr[i] >= 16) {
+						setContainsTen(true);
+					}
+				}
+			}
+
+				if (!containsTen)
+					arr2.add(tempArr);
+				else
+					setContainsTen(false);
+				
+			return; 
+		} 
+
+		int prev = (index == 0) ? 
+				1 : arr[index - 1]; 
+
+		for (int k = prev; k <= num ; k++) 
+		{ 
+			arr[index] = k; 
+			findCombinationsUtilOverTen(arr, arr2, index + 1, num, 
+					reducedNum - k); 
+		} 
 	}
 
 	public void findCombinationsUtil(int arr[], ArrayList<int[]> arr2, int index, 
@@ -3049,6 +3729,22 @@ public class StarPather {
 
 		return ones;
 	}
+	
+	public ArrayList<Integer> CheckOnes (SortedMap<Integer,StarSection> starsub) {
+		ArrayList<Integer> ones = new ArrayList<Integer>();
+		int i = 1;
+		
+		for (Map.Entry<Integer, StarSection> entry : starsub.entrySet())  {
+			StarSection ss = entry.getValue();
+			double measures = ss.getMeasures() + ss.returnLength();
+			if (measures >= 4.0) {
+				ones.add(i);
+			}
+			i++;
+		}
+
+		return ones;
+	}
 
 	public class TimeSig {
 
@@ -3377,7 +4073,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (25).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (26).chart");
 		InputStream is = null;
 
 		try {
@@ -3397,8 +4093,9 @@ public class StarPather {
 		//ArrayList<String> combos = new ArrayList<String>();
 		//test.checkStarCombos(combos);
 		//test.ultraEasyFullPath();
-		test.noSqueezePath();
-		System.out.println(test.getOutput());
+		//test.noSqueezePath();
+		//System.out.println(test.getOutput());
+		test.bestPathEver();
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date date = new Date();
 		System.out.println(dateFormat.format(date));

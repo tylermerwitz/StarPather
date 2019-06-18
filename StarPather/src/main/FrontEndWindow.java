@@ -130,15 +130,15 @@ public class FrontEndWindow {
 				pathType = "Ultra";
 			}
 		});
-		btnUltra.setText("Ultra Easy");
-		btnUltra.setBounds(195, 110, 90, 16);
+		btnUltra.setText("Lazy Whammy");
+		btnUltra.setBounds(195, 110, 100, 16);
 
 		txtNoSu = new Text(shlStar, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
 
 		StringBuffer usage = new StringBuffer();
-		usage.append("Welcome to StarPather V1.0.5!\n");
+		usage.append("Welcome to StarPather V1.1.0!\n");
 		usage.append("Created by Tyler Merwitz AKA MathyNoodles\n");
-		usage.append("Last Updated: 06/06/2019\n\n");
+		usage.append("Last Updated: 06/18/19\n\n");
 		usage.append("This program was designed to optimize the Star Power path\n");
 		usage.append("for any .chart file. Please report any bugs to this program's\n");
 		usage.append("github page:\n");
@@ -157,9 +157,9 @@ public class FrontEndWindow {
 		usage.append("      whammying.\n");
 		usage.append("     -Easy: Find the optimal star power path for the chart\n");
 		usage.append("      entered with NO squeezing and NO early whammying\n");
-		usage.append("     -Ultra Easy: Returns the score you will get on this\n");
-		usage.append("      chart if you always activate star power as soon as\n");
-		usage.append("      it's available\n");
+		usage.append("     -Lazy Whammy: Returns the score you will get on this\n");
+		usage.append("      chart if you get 80% of the maximum possible whammy\n");
+		usage.append("      Star Power\n");
 		usage.append("Finally, hit the \"Optimize\" button, and viola!\n");
 		usage.append("The program will print the Star Power path requested!\n\n");
 		usage.append("Note: It is recommend you use this tool in combination\n");
@@ -202,7 +202,7 @@ public class FrontEndWindow {
 								path.setSqueeze(true);
 								path.setEarlyWhammy(true);
 								path.parseFile(is);
-								path.noSqueezePath();
+								diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -212,7 +212,7 @@ public class FrontEndWindow {
 						else if (pathType.equals("Easy")) {
 							try {
 								path.parseFile(is);
-								path.noSqueezePath();
+								diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -221,9 +221,9 @@ public class FrontEndWindow {
 						}
 						else if (pathType.equals("Ultra")) {
 							try {
-								path.setBadWhammy(true);
+								path.setLazyWhammy(true);
 								path.parseFile(is);
-								path.ultraEasyPath();
+								diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -234,7 +234,7 @@ public class FrontEndWindow {
 							try {
 								path.setEarlyWhammy(true);
 								path.parseFile(is);
-								path.noSqueezePath();
+								diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -242,7 +242,7 @@ public class FrontEndWindow {
 							}
 						}
 
-						diaBox = path.getOutput();
+						//diaBox = path.getOutput();
 						txtNoSu.setText(diaBox);
 
 					}

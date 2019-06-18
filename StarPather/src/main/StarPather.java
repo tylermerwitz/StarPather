@@ -666,10 +666,11 @@ public class StarPather {
 		return pathScore;
 	}
 	
-	public void bestPathEver () {
-		if (starMap.size() < 23) {
+	public String bestPathEver () {
+		String orDetail = getOutput();
+		if (starMap.size() < 23 || starMap.size() > 70) {
 			noSqueezePath();
-			System.out.println(getOutput());
+			return getOutput();
 		}
 		else {
 			int n = starMap.size();
@@ -690,7 +691,9 @@ public class StarPather {
 				}
 			}
 			
-			System.out.println(bestDetail);
+			String detail = orDetail + bestDetail;
+			
+			return detail;
 		}
 	}
 	
@@ -1436,7 +1439,7 @@ public class StarPather {
 							SortedMap<Integer,Note> subMap6 = noteMap.subMap(mapStart+1,activeNote.getTime()+1);
 							String noteFret = activeNote.getFret();
 							activeDetail = activeDetail + fretCounter(subMap6,noteFret,activeBefore,onNote) + 
-									" (Beat " + (1.0 * a.begin/resolution) + ")\n";
+									" (Beat " + df.format(1.0 * a.begin/resolution) + ")\n";
 
 							//pathDetail.append(activeDetail+"\n");
 
@@ -1445,7 +1448,7 @@ public class StarPather {
 								if (subMap7.size() > 0) {
 									String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
 									activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret2,0,onNote) +
-											" (Beat " + (1.0 * subMap7.lastKey()/resolution) + ")\n";
+											" (Beat " + df.format(1.0 * subMap7.lastKey()/resolution) + ")\n";
 									//pathDetail.append("Squeeze " + activeDetail +"\n");
 								}
 							}
@@ -1621,6 +1624,10 @@ public class StarPather {
 	
 	public String fretCounter (SortedMap<Integer,Note> subMap, String noteFret, int activeBefore, boolean onNote) {
 
+		if (subMap.size() <= 1) {
+			return "NN";
+		}
+		
 		int fretCounter = 0;
 
 		for (Map.Entry<Integer, Note> entry : subMap.entrySet()) {
@@ -4073,7 +4080,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (26).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (21).chart");
 		InputStream is = null;
 
 		try {
@@ -4085,9 +4092,9 @@ public class StarPather {
 		
 		//test.test();
 
-		//test.setEarlyWhammy(true);
-		//test.setSqueeze(true);
-		test.setLazyWhammy(true);
+		test.setEarlyWhammy(true);
+		test.setSqueeze(true);
+		//test.setLazyWhammy(true);
 		test.parseFile(is);
 		test.printStarMap();
 		//ArrayList<String> combos = new ArrayList<String>();

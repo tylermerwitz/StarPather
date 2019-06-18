@@ -1,8 +1,19 @@
-Welcome to StarPather V1.0.5!
+Welcome to StarPather V1.1.0!
 Created by Tyler Merwitz AKA MathyNoodles
-Last Updated: 06/06/2019
+Last Updated: 06/18/2019
 
 Patch Notes:
+06/18/19 - V 1.1.0
+   -Fixed various bugs, including major bug involving
+    time signatures switching in the middle of an 
+    activation
+   -Added notation for a "Next Note" activation
+    (will display as "NN")
+   -Added quicker, more accurating handling for very large 
+    charts
+    (Note: charts with 70+ SP phrases will not be
+    100% accurate and will require further manual
+    tuning)
 06/05/19 - V 1.0.6
    -Program can now handle large charts very quickly.
    -There is probably still a limit to SP phrases but I have
@@ -24,10 +35,13 @@ for any .chart file. Please report any bugs to this
 program's github page:
 https://github.com/tylermerwitz/StarPather
 
-Special thanks to Nemo296 for his invaluable knowledge of the
+Special thanks to Nemo296 for their invaluable knowledge of the
 .chart file format and for his help in resolving many of
 the initial issues I ran into with the program's scoring
 logic!
+
+Special thanks to CyclopsDragon for their rigorous testing
+of StarPather and for their amazing bug-finding skills!
 
 Useage:
 First, click the "Select .chart" button near the top of
@@ -40,9 +54,9 @@ Next, select one of the four options for pathing:
       whammying.
      -Easy: Find the optimal star power path for the chart
       entered with NO squeezing and NO early whammying
-     -Ultra Easy: Returns the score you will get on this
-      chart if you always activate star power as soon as
-      it's available
+     -Lazy Whammy: Find the optimal star power path for the
+      chart if you get 80% of the maximum possible whammy
+      Star Power
 Finally, hit the "Optimize" button, and viola!
 The program will print the Star Power path requested!
 

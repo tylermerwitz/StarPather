@@ -1,4 +1,5 @@
-The short form of the path is represented by numbers separated by commas, where the numbers refer to how many star power (SP) phrases you have to collect for the activation. A number in brackets represents how many SP phrases are overrun during the activation. 
+The short form of the path is represented by numbers separated by commas, where the numbers refer to how many star power (SP)
+phrases you have to collect for the activation. A number in brackets represents how many SP phrases are overrun during the activation. 
 
 So a short path that looks like Best Path: 2, 3, 2(1), 2 can be written out as:
 - Collect 2 SP phrases and activate
@@ -6,12 +7,15 @@ So a short path that looks like Best Path: 2, 3, 2(1), 2 can be written out as:
 - Collect 2 SP phrases and activate; during the activation, collect another SP phrase
 - Collect 2 SP phrases and activate
 
-The longer form tells you the number of SP phrases to collect for each activation, how much of the SP meter you'll fill collecting those SP phrases (includes whammy), and the activation point given by a note / chord and a beat.
+The longer form tells you the number of SP phrases to collect for each activation, how much of the SP meter you'll fill collecting 
+those SP phrases (includes whammy), and the activation point given by a note / chord and a beat.
 So you may see an activation like:
 
 2(1) (64.0% SP)
 3rd YB (Beat 257.0)
 
-Which means: collect 2 SP phrases, which will fill your SP meter up 64%. After you've collected the second SP phrase, activate on the 3rd  Yellow+Blue chord that you see, which is on beat 257. During this activation, you'll collect another SP phrase.
+Which means: collect 2 SP phrases, which will fill your SP meter up 64%. After you've collected the second SP phrase, activate on the 
+3rd  Yellow+Blue chord that you see, which is on beat 257. During this activation, you'll collect another SP phrase.
 
-The rest of the info StarPather gives you is just misc. stats. If you select the 'Full Squeeze' option, then it'll also tell you which note the activation should end on, counted from the beginning of the activation. 
+The rest of the info StarPather gives you is just misc. stats. If you select the 'Full Squeeze' option, then it'll also tell you which 
+ote the activation should end on, counted from the beginning of the activation. 

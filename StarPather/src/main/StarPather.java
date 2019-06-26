@@ -123,8 +123,8 @@ public class StarPather {
 	}
 	
 	public void updateSync (int time) {
-		if (time == 0) {
-			time++;
+		if (time <= 0) {
+			time = 1;
 		}
 		SortedMap<Integer,SyncEvent> subMap = tsMap.subMap(tsMap.firstKey(), time);
 		SyncEvent e = subMap.get(subMap.lastKey());
@@ -794,6 +794,8 @@ public class StarPather {
 						key = key + "-Minus" + spFromNext;
 					}
 					
+					int current = 0;
+					
 					if (acts.containsKey(key)) {
 						Activation a = acts.get(key);
 						pathDetail.append(a.activeDetail);
@@ -846,34 +848,54 @@ public class StarPather {
 
 								SortedMap<Integer,Note> subMap = noteMap.subMap(firstAct,secondAct);
 								active = subMap.lastKey() - currentSplength;
+								current++;
+								int truesplength = calcSpLengthNoError(active,sp,currentSp,current);
+								if (truesplength <= 0) {
+									truesplength = currentSplength;
+								}
+								active = subMap.lastKey() - truesplength;
 								secondLast = true;
 							}
 							else if (!secondLast){
-								active = getActivationNote(ss.getTime(),ss.getLength());
-								SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
-								active = subMap.firstKey();
+								if (sp < 6 ) {
+									current++;
+									active = getActivationNote(ss.getTime(),ss.getLength());
+									SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
+									active = subMap.firstKey();
+								}
+								else {
+									
+								}
 							}
+						}
+						
+						if (sp == 0) {
+							continue;
 						}
 
 						updateSync(active);
 
 						double tsMes = 1.0 * ts.getTop() / ts.getBottom() * 4;
 						int splength = (int) Math.ceil(tsMes * sp * resolution);
+						int truesplength = calcSpLengthNoError(active,sp,currentSp,current);
 						int sqLen = 0;
 						if (squeeze) {
 							sqLen = (int) (posEarly + posLate);
 						}
-						splength = splength + sqLen;
+						if (truesplength <= 0) {
+							truesplength = splength;
+							truesplength = truesplength + sqLen;
+						}
 						int maxsplength = (int) Math.ceil(tsMes * 8 * resolution);
 						maxsplength = maxsplength + sqLen;
 						int firstActive = active;
 						int lastActive = 0;
 
-						if (totalSp < ssections.size()) {
+						/*if (totalSp < ssections.size()) {
 							StarSection nextSs = ssections.get(totalSp);
 							int nextSsActive = getActivationNote(nextSs.getTime(), nextSs.getLength());
 							SortedMap<Integer,Note> subMap2 = noteMap.subMap(firstActive,nextSsActive-1);
-							lastActive = subMap2.lastKey() - splength;
+							lastActive = subMap2.lastKey() - truesplength;
 							if (firstActive == lastActive) {
 								lastActive++;
 							}
@@ -891,9 +913,9 @@ public class StarPather {
 						else if (sp > 0){
 							int last = noteMap.lastKey();
 							Note lastNote = noteMap.get(last);
-							lastActive = lastNote.getTime() - splength;
+							lastActive = lastNote.getTime() - truesplength;
 							if (j == s.length() - 1 && nextStarMapSection!= 0) {
-								lastActive = nextStarMapSection - splength;
+								lastActive = nextStarMapSection - truesplength;
 							}
 							if (firstActive == lastActive) {
 								lastActive++;
@@ -908,17 +930,34 @@ public class StarPather {
 								if (!subMap4.isEmpty())
 									lastActive = subMap4.firstKey();
 							 }
+						}*/
+						
+						firstActive = findFirstAct(spValues);
+						
+						if (firstActive == -1) {
+							skipPath = true;
+							continue;
+						}
+						
+						lastActive = findLastAct(spValues);
+						
+						if (firstActive == lastActive) {
+							lastActive++;
+						}
+						else if (firstActive > lastActive) {
+							skipPath = true;
+							continue;
 						}
 
-						Activation a = getHighestScore(firstActive,lastActive,splength,maxsplength,spValues);
+						Activation a = getHighestScore(firstActive,lastActive,truesplength,maxsplength,spValues);
 
 						if (a.takeFromNext) {
-							splength = (int) (splength + a.getSpFromNext());
+							truesplength = (int) (truesplength + a.getSpFromNext());
 							double spFromCheck = a.getSpFromNext();
-							Activation a2 = getHighestScore(a.begin,lastActive,splength,maxsplength,spValues);
+							Activation a2 = getHighestScore(a.begin,lastActive,truesplength,maxsplength,spValues);
 							while (spFromCheck < a2.getSpFromNext()) {
 								spFromCheck = a2.getSpFromNext() - 1;
-								a2 = getHighestScore(a2.begin,lastActive,splength,maxsplength,spValues);
+								a2 = getHighestScore(a2.begin,lastActive,truesplength,maxsplength,spValues);
 								if (a2.getSpFromNext() - 1 == spFromCheck) {
 									spFromCheck++;
 								}
@@ -973,16 +1012,19 @@ public class StarPather {
 							SortedMap<Integer,Note> subMap6 = noteMap.subMap(mapStart+1,activeNote.getTime()+1);
 							String noteFret = activeNote.getFret();
 							activeDetail = activeDetail + fretCounter(subMap6,noteFret,activeBefore,onNote) + 
-									" (Beat " + (1.0 * a.begin/resolution) + ")\n";
+									" (Beat " + df.format(1.0 * a.begin/resolution) + ")\n";
 
 							//pathDetail.append(activeDetail+"\n");
 
 							if (squeeze && a.end > 0) {
+								if (activeNote.getTime()+1 > a.end) {
+									System.out.println("");
+								}
 								SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,a.end);
 								if (subMap7.size() > 0) {
 									String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
 									activeDetail = activeDetail + "Squeeze " +fretCounter(subMap7,noteFret2,0,onNote) +
-											" (Beat " + (1.0 * subMap7.lastKey()/resolution) + ")\n";
+											" (Beat " + df.format(1.0 * subMap7.lastKey()/resolution) + ")\n";
 									//pathDetail.append("Squeeze " + activeDetail +"\n");
 								}
 							}
@@ -1260,6 +1302,8 @@ public class StarPather {
 						key = key + "-Minus" + spFromNext;
 					}
 					
+					int current = 0;
+					
 					if (acts.containsKey(key)) {
 						Activation a = acts.get(key);
 						pathDetail.append(a.activeDetail);
@@ -1276,7 +1320,6 @@ public class StarPather {
 					else {
 						for (int k = totalSp - currentSp; k < totalSp; k++ ) {
 							StarSection ss = ssections.get(k);
-
 							updateSync(ss.getTime());
 
 							double lv = ss.returnLength();
@@ -1312,34 +1355,54 @@ public class StarPather {
 
 								SortedMap<Integer,Note> subMap = noteMap.subMap(firstAct,secondAct);
 								active = subMap.lastKey() - currentSplength;
+								current++;
+								int truesplength = calcSpLengthNoError(active,sp,currentSp,current);
+								if (truesplength <= 0) {
+									truesplength = currentSplength;
+								}
+								active = subMap.lastKey() - truesplength;
 								secondLast = true;
 							}
 							else if (!secondLast){
-								active = getActivationNote(ss.getTime(),ss.getLength());
-								SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
-								active = subMap.firstKey();
+								if (sp < 6 ) {
+									current++;
+									active = getActivationNote(ss.getTime(),ss.getLength());
+									SortedMap<Integer,Note> subMap = noteMap.subMap(active,noteMap.lastKey());
+									active = subMap.firstKey();
+								}
+								else {
+									
+								}
 							}
+						}
+						
+						if (sp == 0) {
+							continue;
 						}
 
 						updateSync(active);
 
 						double tsMes = 1.0 * ts.getTop() / ts.getBottom() * 4;
 						int splength = (int) Math.ceil(tsMes * sp * resolution);
+						int truesplength = calcSpLengthNoError(active,sp,currentSp,current);
 						int sqLen = 0;
 						if (squeeze) {
 							sqLen = (int) (posEarly + posLate);
 						}
-						splength = splength + sqLen;
+						if (truesplength <= 0) {
+							truesplength = splength;
+							truesplength = truesplength + sqLen;
+						}
 						int maxsplength = (int) Math.ceil(tsMes * 8 * resolution);
 						maxsplength = maxsplength + sqLen;
 						int firstActive = active;
 						int lastActive = 0;
 
-						if (totalSp < ssections.size()) {
+						/*if (totalSp < ssections.size()) {
 							StarSection nextSs = ssections.get(totalSp);
 							int nextSsActive = getActivationNote(nextSs.getTime(), nextSs.getLength());
 							SortedMap<Integer,Note> subMap2 = noteMap.subMap(firstActive,nextSsActive-1);
-							lastActive = subMap2.lastKey() - splength;
+							lastActive = subMap2.lastKey() - truesplength;
 							if (firstActive == lastActive) {
 								lastActive++;
 							}
@@ -1357,9 +1420,9 @@ public class StarPather {
 						else if (sp > 0){
 							int last = noteMap.lastKey();
 							Note lastNote = noteMap.get(last);
-							lastActive = lastNote.getTime() - splength;
+							lastActive = lastNote.getTime() - truesplength;
 							if (j == s.length() - 1 && nextStarMapSection!= 0) {
-								lastActive = nextStarMapSection - splength;
+								lastActive = nextStarMapSection - truesplength;
 							}
 							if (firstActive == lastActive) {
 								lastActive++;
@@ -1374,17 +1437,34 @@ public class StarPather {
 								if (!subMap4.isEmpty())
 									lastActive = subMap4.firstKey();
 							 }
+						}*/
+						
+						firstActive = findFirstAct(spValues);
+						
+						if (firstActive == -1) {
+							skipPath = true;
+							continue;
+						}
+						
+						lastActive = findLastAct(spValues);
+						
+						if (firstActive == lastActive) {
+							lastActive++;
+						}
+						else if (firstActive > lastActive) {
+							skipPath = true;
+							continue;
 						}
 
-						Activation a = getHighestScore(firstActive,lastActive,splength,maxsplength,spValues);
+						Activation a = getHighestScore(firstActive,lastActive,truesplength,maxsplength,spValues);
 
 						if (a.takeFromNext) {
-							splength = (int) (splength + a.getSpFromNext());
+							truesplength = (int) (truesplength + a.getSpFromNext());
 							double spFromCheck = a.getSpFromNext();
-							Activation a2 = getHighestScore(a.begin,lastActive,splength,maxsplength,spValues);
+							Activation a2 = getHighestScore(a.begin,lastActive,truesplength,maxsplength,spValues);
 							while (spFromCheck < a2.getSpFromNext()) {
 								spFromCheck = a2.getSpFromNext() - 1;
-								a2 = getHighestScore(a2.begin,lastActive,splength,maxsplength,spValues);
+								a2 = getHighestScore(a2.begin,lastActive,truesplength,maxsplength,spValues);
 								if (a2.getSpFromNext() - 1 == spFromCheck) {
 									spFromCheck++;
 								}
@@ -1444,6 +1524,9 @@ public class StarPather {
 							//pathDetail.append(activeDetail+"\n");
 
 							if (squeeze && a.end > 0) {
+								if (activeNote.getTime()+1 > a.end) {
+									System.out.println("");
+								}
 								SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,a.end);
 								if (subMap7.size() > 0) {
 									String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
@@ -1708,10 +1791,16 @@ public class StarPather {
 		int firstAct = 0;
 		int firstActSS = 0;
 		double measures = 0.0;
+		boolean locTakeNext = takeFromNext;
 		
 		for (int i = 0; i < sss.size(); i++) {
 			StarSection ss = sss.get(i);
-			measures = measures + ss.getMeasures() + ss.returnLength();
+			double lv = ss.returnLength();
+			if (locTakeNext) {
+				lv = lv - (spFromNext/3.75);
+				locTakeNext = false;
+			}
+			measures = measures + ss.getMeasures() + lv;
 			double lastmeasures = 0.0;
 			
 			if (measures >= 4 && firstAct == 0) {
@@ -1733,9 +1822,9 @@ public class StarPather {
 							if (earlyWhammy) {
 								len = (int) (len + posEarly);
 							}
-							double lv = (double) len / resolution;
-							lv = lv / 3.75;
-							checkLength = checkLength + lv;
+							double lv2 = (double) len / resolution;
+							lv2 = lv2 / 3.75;
+							checkLength = checkLength + lv2;
 							if (checkLength >= 4) {
 								double checkLength2 = checkLength - 4;
 								if (checkLength2 < 0) {
@@ -1752,31 +1841,26 @@ public class StarPather {
 			}
 			
 			if (firstAct != 0) {
-				if (!lastSyncEvent) {
-					lastSyncIndex = updateSync(firstAct,lastSyncIndex);
-				}
+
+				updateSync(firstAct);
 
 				double tsMes = ts.getTop() / ts.getBottom() * 4;
-				int splength = (int) Math.ceil(tsMes * measures * resolution);
-				if (squeeze) {
+				int splength = calcSpLength(firstAct,measures,sss.size(),firstActSS);
+				/*if (squeeze) {
 					splength = (int) (splength + posEarly + posLate);
-				}
-				int end = firstAct + splength;
+				}*/
+				//int end = firstAct + splength;
 
-				if (!lastSyncEvent) {
-					end = checkSync(firstAct,end,measures);
-				}
-
-				int check = checkExtraSPNoMod(firstAct,end,measures);
+				//int check = checkExtraSPNoMod(firstAct,end,measures);
 				
-				if (firstActSS + check < sss.size()) {
+				if (splength == -1) {
 					firstAct = 0;
 					firstActSS = 0;
 					if (lastmeasures != 0)
 						measures = lastmeasures;
 				}
 				
-				else if (firstActSS + check > sss.size()) {
+				else if (splength == 0) {
 					return -1;
 				}
 				else {
@@ -1836,6 +1920,13 @@ public class StarPather {
 		}
 		
 		lastAct = lastEnd - splength - 1;
+		
+		int truesplength = calcSpLengthNoError(lastAct,measures,sss.size(),sss.size());
+		if (truesplength <= 0) {
+			truesplength = splength;
+		}
+		
+		lastAct = lastEnd - truesplength - 1;
 		
 		return lastAct;
 	}
@@ -2047,6 +2138,10 @@ public class StarPather {
 			double tsMes = ts.getTop() / ts.getBottom() * 4.0;*/
 			
 			int currentSp =  calcSpLength(i,maxcheck,sss.size(),currentsections);
+			
+			if (currentSp == -1) {
+				continue;
+			}
 			
 			if (currentSp == 0) {
 				i = lastAct + 1;
@@ -2302,6 +2397,9 @@ public class StarPather {
 					}
 					
 					double spcheck = spLeft(active,ss.getTime(),currentsp+extra);
+					if (spcheck <= 0) {
+						return -1;
+					}
 					double penalty = 0;
 					if (spcheck > 6.0) {
 						double over = spcheck - 6.0;
@@ -2324,6 +2422,106 @@ public class StarPather {
 				if (subMapSs.size() + currentsections > sectionsize) {
 					return 0;
 				}
+				sssize = subMapSs.size() - mapcounter;
+				if (sssize > 0) {
+					splength = orsplength;
+					currentsp = orsp;
+				}
+			}
+			updateSync(active+splength);
+			if (squeeze)
+				splength = splength + (int)posLate;
+		
+		/*if (splength <= 0) {
+			System.out.println("");
+		}*/	
+		
+		return splength;
+	}
+	
+	public int calcSpLengthNoError (int active, double sp, int sectionsize, int currentsections) {
+		int splength = 0;
+		double currentsp = sp;
+		
+		updateSync(active);
+		double tsMes = ts.getTop() / ts.getBottom() * 4;
+		
+		splength = (int) Math.ceil(tsMes * currentsp * resolution);
+		if (squeeze)
+			splength = splength + (int)posEarly;
+		
+		SortedMap<Integer,SyncEvent> subMapts = tsMap.subMap(active, active+splength);
+		if (subMapts.size() > 0) {
+			int newsplength = 0;
+			if (squeeze)
+				newsplength = newsplength + (int)posEarly;
+			int current = active;
+			for (Map.Entry<Integer, SyncEvent> entry : subMapts.entrySet()) {
+				SyncEvent e = entry.getValue();
+				int endcurrent = e.getInd();
+				double spcheck = spLeft(current,endcurrent,currentsp);
+				if (spcheck <= 0) {
+					continue;
+				}
+				newsplength = newsplength + (int) Math.ceil(tsMes * (currentsp - spcheck) * resolution);
+				currentsp = spcheck;
+				current = endcurrent;
+				updateSync(current);
+				tsMes = ts.getTop() / ts.getBottom() * 4;
+			}
+			newsplength = newsplength + (int) Math.ceil(tsMes * (currentsp) * resolution);
+			splength = newsplength;	
+			
+			/*if (splength <= 0) {
+				System.out.println("");
+			}*/
+		}
+		
+			SortedMap<Integer,StarSection> subMapSs = starMap.subMap(active, active+splength);
+			int sssize = subMapSs.size();
+			int orsplength = splength;
+			double orsp = currentsp;
+			/*if (sssize + currentsections > sectionsize) {
+				return 0;
+			}*/
+			while (sssize > 0) {
+				int mapcounter = 0;
+				for (Map.Entry<Integer, StarSection> entry : subMapSs.entrySet()) {
+					StarSection ss = entry.getValue();
+					double extra = ss.returnLength();
+					
+					SortedMap<Integer,Note> subMapno = noteMap.subMap(ss.getTime(), ss.getTime()+ss.getLength());
+					Note not = subMapno.get(subMapno.lastKey());
+					if (not.getLength() > 0) {
+						extra = extra - returnSpLength(not.getLength(), not.getTime());
+					}
+					
+					double spcheck = spLeft(active,ss.getTime(),currentsp+extra);
+					/*if (spcheck <= 0) {
+						return -1;
+					}*/
+					double penalty = 0;
+					if (spcheck > 6.0) {
+						double over = spcheck - 6.0;
+						if (over > 2.0) {
+							over = 2.0;
+						}
+						//extra = extra - over;
+						penalty = over;
+					}
+					currentsp = currentsp + 2.0 + ss.returnLength() - penalty;
+					splength = (int) Math.ceil(tsMes * currentsp * resolution);
+					if (squeeze)
+						splength = splength + (int)posEarly;
+					mapcounter++;
+					/*if (splength <= 0) {
+						System.out.println("");
+					}*/	
+				}
+				subMapSs = starMap.subMap(active, active+splength);
+				/*if (subMapSs.size() + currentsections > sectionsize) {
+					return 0;
+				}*/
 				sssize = subMapSs.size() - mapcounter;
 				if (sssize > 0) {
 					splength = orsplength;
@@ -2469,7 +2667,7 @@ public class StarPather {
 						add = false;
 						jn = temp.length;
 					}
-					if (n > 30 && t >= 4) {
+					if (n > 30 && t >= 5) {
 						add = false;
 						jn = temp.length;
 					}
@@ -2585,12 +2783,20 @@ public class StarPather {
 					}
 					StringBuilder sb = new StringBuilder(s);
 					boolean addThis = true;
-					for (int oner = 0; oner < ones.size(); oner++) {
-						if (ones.get(oner) >= sb.length()) {
+					int total = 0;
+					for (int oner = 0; oner < str.length; oner++) {
+						total = total + str[oner];
+						if (str[oner] == 1) {
+							if (!ones.contains(total)){
 							addThis = false;
-							continue;
+							continue; 
+							}
+							else
+							sb.setCharAt(oner, '1');
 						}
-						sb.setCharAt(ones.get(oner)-1, '1');
+						else {
+							sb.setCharAt(oner, (char) str[oner]);
+						}
 					}
 					if (!addThis) {
 						continue;
@@ -2608,12 +2814,20 @@ public class StarPather {
 					}
 					StringBuilder sb = new StringBuilder(s);
 					boolean addThis = true;
+					int total = 0;
 					for (int oner = 0; oner < ones.size(); oner++) {
-						if (ones.get(oner) >= sb.length()) {
+						total = total + str[oner];
+						if (str[oner] == 1) {
+							if (!ones.contains(total)){
 							addThis = false;
-							continue;
+							continue; 
+							}
+							else
+							sb.setCharAt(oner, '1');
 						}
-						sb.setCharAt(ones.get(oner)-1, '1');
+						else {
+							sb.setCharAt(oner, (char) str[oner]);
+						}
 					}
 					if (!addThis) {
 						continue;
@@ -2642,6 +2856,9 @@ public class StarPather {
 			for (int l = 0; l < allCombos.size(); l++) {
 				boolean add = true;
 				String s = allCombos.get(l);
+				if (s.equalsIgnoreCase("123222132")) {
+					System.out.println("");
+				}
 				if (s.contains("1")) {
 					if (numberOfOnes == 0) {
 						if (s.charAt(s.length()-1) != '1') {
@@ -2650,14 +2867,10 @@ public class StarPather {
 					}
 					else {
 						int spNum = 0;
-						ArrayList<Integer> posOnes = new ArrayList<Integer>();
 						for (int m = 0; m < s.length(); m++) {
-							int thisSpNum = s.charAt(m);
+							int thisSpNum = Character.getNumericValue(s.charAt(m));
 							spNum = spNum + thisSpNum;
-							if (thisSpNum == '1') {
-								posOnes.add(spNum);
-							}
-							if (!ones.contains(spNum)) {
+							if (thisSpNum == 1 && !ones.contains(spNum)) {
 								add = false;
 							}
 						}
@@ -2665,6 +2878,10 @@ public class StarPather {
 				}
 				
 				if (add) {
+					goodCombos.add(s);
+				}	
+				
+				/*if (add) {
 					ArrayList<StarSection> ssections = new ArrayList<StarSection>();
 
 					for (Map.Entry<Integer, StarSection> entry : starsub.entrySet()) {
@@ -2684,10 +2901,8 @@ public class StarPather {
 
 						for (int y = totalSp - currentSp; y < totalSp; y++ ) {
 							StarSection ss = ssections.get(y);
-							if (!lastSyncEvent) {
-								lastSyncIndex = updateSync(ss.getTime(),lastSyncIndex);
-							}
-
+							
+							updateSync(ss.getTime());
 
 							double lv = ss.returnLength();
 
@@ -2705,33 +2920,23 @@ public class StarPather {
 							sp = 0;
 						}
 
-						if (!lastSyncEvent) {
-							lastSyncIndex = updateSync(active,lastSyncIndex);
-						}
+						updateSync(active);
 
 						double tsMes = ts.getTop() / ts.getBottom() * 4;
 						int splength = (int) Math.ceil(tsMes * sp * resolution);
 						int end = active + splength;
 
-						if (!lastSyncEvent) {
-							end = checkSync(active,end,sp);
-						}
-
 						int check = checkExtraSPNoMod(active,end,sp);
 
 						if (check != 0 && totalSp < ssections.size()) {
-							//System.out.println("Overlap");
+							System.out.println("Overlap");
 							add = false;
 						}
-					}
-					if (add) {
-						goodCombos.add(s);
-					}	
+					}*/
+					
 				}
-
-				
+			
 			}
-		}
 
 		//System.out.println("Total combos: " + allCombos.size());
 
@@ -2761,7 +2966,7 @@ public class StarPather {
 						add = false;
 						jn = temp.length;
 					}
-					if (n > 30 && t >= 4) {
+					if (n > 30 && t >= 5) {
 						add = false;
 						jn = temp.length;
 					}
@@ -2877,12 +3082,20 @@ public class StarPather {
 					}
 					StringBuilder sb = new StringBuilder(s);
 					boolean addThis = true;
-					for (int oner = 0; oner < ones.size(); oner++) {
-						if (ones.get(oner) >= sb.length()) {
+					int total = 0;
+					for (int oner = 0; oner < str.length; oner++) {
+						total = total + str[oner];
+						if (str[oner] == 1) {
+							if (!ones.contains(total)){
 							addThis = false;
-							continue;
+							continue; 
+							}
+							else
+							sb.setCharAt(oner, '1');
 						}
-						sb.setCharAt(ones.get(oner)-1, '1');
+						else {
+							sb.setCharAt(oner, (char) str[oner]);
+						}
 					}
 					if (!addThis) {
 						continue;
@@ -2900,12 +3113,20 @@ public class StarPather {
 					}
 					StringBuilder sb = new StringBuilder(s);
 					boolean addThis = true;
+					int total = 0;
 					for (int oner = 0; oner < ones.size(); oner++) {
-						if (ones.get(oner) >= sb.length()) {
+						total = total + str[oner];
+						if (str[oner] == 1) {
+							if (!ones.contains(total)){
 							addThis = false;
-							continue;
+							continue; 
+							}
+							else
+							sb.setCharAt(oner, '1');
 						}
-						sb.setCharAt(ones.get(oner)-1, '1');
+						else {
+							sb.setCharAt(oner, (char) str[oner]);
+						}
 					}
 					if (!addThis) {
 						continue;
@@ -2942,13 +3163,9 @@ public class StarPather {
 					}
 					else {
 						int spNum = 0;
-						ArrayList<Integer> posOnes = new ArrayList<Integer>();
 						for (int m = 0; m < s.length(); m++) {
-							int thisSpNum = s.charAt(m);
+							int thisSpNum = Character.getNumericValue(s.charAt(m));
 							spNum = spNum + thisSpNum;
-							if (thisSpNum == '1') {
-								posOnes.add(spNum);
-							}
 							if (!ones.contains(spNum)) {
 								add = false;
 							}
@@ -4080,7 +4297,7 @@ public class StarPather {
 	public static void main(String[] args) {
 		StarPather test = new StarPather();
 
-		File chart = new File("C:/Users/tmerwitz/Downloads/notes (21).chart");
+		File chart = new File("C:/Users/tmerwitz/Downloads/notes (33).chart");
 		InputStream is = null;
 
 		try {
@@ -4102,7 +4319,7 @@ public class StarPather {
 		//test.ultraEasyFullPath();
 		//test.noSqueezePath();
 		//System.out.println(test.getOutput());
-		test.bestPathEver();
+		System.out.println(test.bestPathEver());
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		Date date = new Date();
 		System.out.println(dateFormat.format(date));

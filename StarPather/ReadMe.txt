@@ -1,15 +1,8 @@
-Welcome to StarPather V1.2.0!
+Welcome to StarPather V1.1.0!
 Created by Tyler Merwitz AKA MathyNoodles
-Last Updated: 06/26/2019
+Last Updated: 06/18/2019
 
 Patch Notes:
-06/26/19 - V 1.2.0
-   -Two major bug fixes:
-      -Fixed bug in which program was accidentally weeding out certain
-         activation combinations in charts that contained multiple SP
-         phrases that gave over 50% SP
-      -Fixed time-signature related bug program would sometimes not
-         correctly calulcate the length of an activation
 06/18/19 - V 1.1.0
    -Fixed various bugs, including major bug involving
     time signatures switching in the middle of an 

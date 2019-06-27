@@ -287,13 +287,19 @@ public class StarPather {
 						offset = theline.indexOf("=") - 5;
 						String songName = theline.substring(offset+7).trim().replace("\"", "");
 						appendName(songName);
-						songInfo.append(songName);
+						songInfo.append(songName + "\n");
 						continue;
 					}
-					else if (theline.startsWith("Artist =")) {
-						String artistName = " by " + theline.substring(offset+9).trim().replace("\"", "");
+					else if (theline.contains("Artist =")) {
+						String artistName = "by " + theline.substring(offset+9).trim().replace("\"", "");
 						appendName(artistName);
-						songInfo.append(artistName);
+						songInfo.append(artistName + "\n");
+						continue;
+					}
+					else if (theline.contains("Charter =")) {
+						String artistName = "Charted by " + theline.substring(offset+10).trim().replace("\"", "");
+						appendName(artistName);
+						songInfo.append(artistName + "\n");
 						continue;
 					}
 					else if (theline.startsWith("Resolution =") || theline.startsWith("  Resolution =")) {
@@ -302,14 +308,15 @@ public class StarPather {
 						continue;
 					}
 					else if (theline.startsWith("}")) {
+						songInfo.append("\n");
 						songSection = false;
 						continue;
 					}
-					else {
+					/*else {
 						theline = theline.trim();
 						songInfo.append(theline);
 						continue;
-					}
+					}*/
 				}
 
 				if (theline.startsWith("[SyncTrack]")) {
@@ -527,6 +534,7 @@ public class StarPather {
 			}
 			
 			int score = getTotalSum();
+			output.append(songInfo);
 			output.append("Notes: " + notes + "\n");
 			output.append("Base Score: " + score + "\n");
 			if (squeeze) {
@@ -1017,9 +1025,6 @@ public class StarPather {
 							//pathDetail.append(activeDetail+"\n");
 
 							if (squeeze && a.end > 0) {
-								if (activeNote.getTime()+1 > a.end) {
-									System.out.println("");
-								}
 								SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,a.end);
 								if (subMap7.size() > 0) {
 									String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
@@ -1524,9 +1529,6 @@ public class StarPather {
 							//pathDetail.append(activeDetail+"\n");
 
 							if (squeeze && a.end > 0) {
-								if (activeNote.getTime()+1 > a.end) {
-									System.out.println("");
-								}
 								SortedMap<Integer,Note> subMap7 = noteMap.subMap(activeNote.getTime()+1,a.end);
 								if (subMap7.size() > 0) {
 									String noteFret2 = subMap7.get(subMap7.lastKey()).getFret();
@@ -2856,9 +2858,6 @@ public class StarPather {
 			for (int l = 0; l < allCombos.size(); l++) {
 				boolean add = true;
 				String s = allCombos.get(l);
-				if (s.equalsIgnoreCase("123222132")) {
-					System.out.println("");
-				}
 				if (s.contains("1")) {
 					if (numberOfOnes == 0) {
 						if (s.charAt(s.length()-1) != '1') {

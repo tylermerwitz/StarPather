@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -16,6 +17,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import swt.SWTResourceManager;
+import org.eclipse.swt.widgets.ProgressBar;
 
 public class FrontEndWindow {
 
@@ -27,10 +29,13 @@ public class FrontEndWindow {
 	private Text txtNoSu;
 	private Button btnSelectchart;
 	public String chart = "";
-	private Button btnNewButton;
+	private Button buttonRun;
+	public StarPather path;
+	private Display display;
 
 	String pathType = "";
 	String diaBox = "";
+	private ProgressBar progressBar;
 
 	/**
 	 * Launch the application.
@@ -49,10 +54,11 @@ public class FrontEndWindow {
 	 * Open the window.
 	 */
 	public void open() {
-		Display display = Display.getDefault();
+		display = Display.getDefault();
 		createContents();
 		shlStar.open();
-		shlStar.layout();
+		shlStar.layout();		
+		
 		while (!shlStar.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
@@ -65,7 +71,7 @@ public class FrontEndWindow {
 	 */
 	protected void createContents() {
 		shlStar = new Shell();
-		shlStar.setSize(391, 463);
+		shlStar.setSize(391, 507);
 		shlStar.setText("StarPather");
 
 		txtTest = new Text(shlStar, SWT.BORDER | SWT.READ_ONLY | SWT.CENTER);
@@ -169,15 +175,15 @@ public class FrontEndWindow {
 
 		txtNoSu.setText(usage.toString());
 		txtNoSu.setEditable(false);
-		txtNoSu.setBounds(10, 172, 355, 242);
+		txtNoSu.setBounds(10, 195, 355, 263);
 
 		Label lblTestGui = new Label(shlStar, SWT.NONE);
 		lblTestGui.setFont(SWTResourceManager.getFont("Segoe UI", 22, SWT.NORMAL));
 		lblTestGui.setBounds(123, 10, 129, 43);
 		lblTestGui.setText("StarPather");
 
-		btnNewButton = new Button(shlStar, SWT.NONE);
-		btnNewButton.addSelectionListener(new SelectionListener() {
+		buttonRun = new Button(shlStar, SWT.NONE);
+		buttonRun.addSelectionListener(new SelectionListener() {
 			public void widgetSelected(SelectionEvent e) {
 
 				if (chart!="") {
@@ -195,14 +201,14 @@ public class FrontEndWindow {
 							er.printStackTrace();
 						}
 
-						StarPather path = new StarPather();
+						path = new StarPather();
 
 						if (pathType.equals("FullSqueeze")) {
 							try {
 								path.setSqueeze(true);
 								path.setEarlyWhammy(true);
 								path.parseFile(is);
-								diaBox = path.bestPathEver();
+								//diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -212,7 +218,7 @@ public class FrontEndWindow {
 						else if (pathType.equals("Easy")) {
 							try {
 								path.parseFile(is);
-								diaBox = path.bestPathEver();
+								//diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -223,7 +229,7 @@ public class FrontEndWindow {
 							try {
 								path.setLazyWhammy(true);
 								path.parseFile(is);
-								diaBox = path.bestPathEver();
+								//diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -234,7 +240,7 @@ public class FrontEndWindow {
 							try {
 								path.setEarlyWhammy(true);
 								path.parseFile(is);
-								diaBox = path.bestPathEver();
+								//diaBox = path.bestPathEver();
 							}
 							catch (Exception er) {
 								String ert = er.toString();
@@ -243,7 +249,95 @@ public class FrontEndWindow {
 						}
 
 						//diaBox = path.getOutput();
-						txtNoSu.setText(diaBox);
+						new Thread() {
+						      public void run() {
+						          if (display.isDisposed()) {
+						              return;
+						          }
+						          this.updateGUIWhenStart();
+						          
+						  		String orDetail = path.getOutput();
+						  		
+						  		if (path.starMap.size() < 23 || path.starMap.size() > 70) {
+						  			path.noSqueezePath();
+						  			diaBox = path.getOutput();
+						  		}
+						  		else {
+						  			int n = path.starMap.size();
+						  			ArrayList<ArrayList<Integer>> comboList = new ArrayList<ArrayList<Integer>>();
+
+						  			path.checkTensCombos(comboList,n);
+						  			
+						  			int bestScore = 0;
+						  			String bestDetail = "";
+						  			
+						  			for (int i = 0; i < comboList.size(); i++) {
+						  				
+						  				this.updateGUIInProgress(i, comboList.size());
+						  				this.copy();
+						  				
+						  				int score = path.noSqueezePathAlt(comboList.get(i));
+						  				String currentDetail = path.getOutput();
+						  				
+						  				if (score > bestScore) {
+						  					bestScore = score;
+						  					bestDetail = currentDetail;
+						  				}
+						  				
+						  			}
+						  			
+						  			String detail = orDetail + bestDetail;
+						  			
+						  			diaBox = detail;
+						  		}
+						          //
+						          this.updateGUIWhenFinish();
+						      }
+						      private void copy() {
+							        try {
+							            Thread.sleep(100);
+							        } catch (InterruptedException e) {
+							        }
+							    }
+						  
+						    private void updateGUIWhenStart() {
+						        display.asyncExec(new Runnable() {
+						 
+						            @Override
+						            public void run() {
+						                buttonRun.setEnabled(false);
+						                buttonRun.setText("Running...");
+						                btnSelectchart.setEnabled(false);
+						            }
+						        });
+						    }
+						 
+						    private void updateGUIWhenFinish() {
+						        display.asyncExec(new Runnable() {
+						 
+						            @Override
+						            public void run() {
+						            	buttonRun.setEnabled(true);
+						            	btnSelectchart.setEnabled(true);
+						                progressBar.setSelection(0);
+						                progressBar.setMaximum(1);
+						                txtNoSu.setText(diaBox);
+						                buttonRun.setText("Optimize!");
+						            }
+						        });
+						    }
+						 
+						    private void updateGUIInProgress(int value, int count) {
+						        display.asyncExec(new Runnable() {
+						 
+						            @Override
+						            public void run() {
+						            	progressBar.setMaximum(count);
+						                progressBar.setSelection(value);						             
+						            }
+						        });
+						    }
+						    }.start();
 
 					}
 				}
@@ -255,8 +349,11 @@ public class FrontEndWindow {
 
 			}
 		});
-		btnNewButton.setBounds(125, 134, 105, 32);
-		btnNewButton.setText("Optimize!");
+		buttonRun.setBounds(125, 134, 105, 32);
+		buttonRun.setText("Optimize!");
+		
+		progressBar = new ProgressBar(shlStar, SWT.NONE);
+		progressBar.setBounds(65, 172, 244, 17);
 
 	}
 	public Button getBtnSelectchart() {

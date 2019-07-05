@@ -76,16 +76,5 @@
 	  <echo> ( === ) </echo>
 	  <echo>  ----- </echo>	  
 	</target>
-		
-	<target name="deploy_to_workhorse">
-		<copy file="\\workhorse\convert\prog\backup\${ant.project.name}\${ant.project.name}_backup.jar" tofile="\\workhorse\convert\prog\backup\${ant.project.name}\${ant.project.name}_backup2.jar" verbose="true"  overwrite="true" failonerror="false"/>
-		<copy file="\\workhorse\convert\prog\${ant.project.name}.jar" tofile="\\workhorse\convert\prog\backup\${ant.project.name}\${ant.project.name}_backup.jar" verbose="true"  overwrite="true" failonerror="false"/>
-		<copy file="${dist.dir}\${ant.project.name}.jar" tofile="\\workhorse\convert\prog\${ant.project.name}.jar" verbose="true"  overwrite="true" /> 
-	</target>
-	
-	<target name="rollback">
-		<copy file="\\workhorse\convert\prog\backup\${ant.project.name}\${ant.project.name}_backup.jar" tofile="\\workhorse\convert\prog\${ant.project.name}.jar" verbose="true"  overwrite="true" failonerror="false"/>
-		<copy file="\\workhorse\convert\prog\backup\${ant.project.name}\${ant.project.name}_backup2.jar" tofile="\\workhorse\convert\prog\backup\${ant.project.name}\${ant.project.name}_backup.jar" verbose="true"  overwrite="true" failonerror="false"/>
-	</target>
 
 </project>

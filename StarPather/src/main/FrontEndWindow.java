@@ -510,7 +510,7 @@ public class FrontEndWindow {
 						            @Override
 						            public void run() {
 						            	buttonRun.setEnabled(true);
-						            	btnSelectchart.setEnabled(false);
+						            	btnSelectchart.setEnabled(true);
 						                progressBar.setSelection(0);
 						                progressBar.setMaximum(1);
 						                txtNoSu.setText(diaBox);

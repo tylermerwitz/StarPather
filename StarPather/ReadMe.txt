@@ -1,10 +1,8 @@
-Welcome to StarPather V1.3.0!
+Welcome to StarPather V1.1.0!
 Created by Tyler Merwitz AKA MathyNoodles
-Last Updated: 07/05/2019
+Last Updated: 06/18/2019
 
 Patch Notes:
-07/05/19 - V 1.3.0
-   -Various GUI updates
 06/18/19 - V 1.1.0
    -Fixed various bugs, including major bug involving
     time signatures switching in the middle of an 
@@ -48,16 +46,17 @@ of StarPather and for their amazing bug-finding skills!
 Useage:
 First, click the "Select .chart" button near the top of
  the window and find the .chart file you wish to use
- After your chart is selected, you may toggle these options:
-		-Instrument: Select the instrument the program will
-		return a path for.
-		-Difficulty: Select the difficulty the program will
-		return a path for.
-		-Whammy: Select the average amount of extra star
-		power you will receive for every star power
-		sustain note in the chart.
-		-Squeeze: Toggle whether or not you will be squeezing
-		in Star Power phrases.
+Next, select one of the four options for pathing:
+     -Full Squeeze: Find the optimal star power path for the
+      chart entered with squeezing and early whammying.
+     -Early Whammy: Find the optimal star power path for the
+      chart entered with NO squeezing and early whammying
+      whammying.
+     -Easy: Find the optimal star power path for the chart
+      entered with NO squeezing and NO early whammying
+     -Lazy Whammy: Find the optimal star power path for the
+      chart if you get 80% of the maximum possible whammy
+      Star Power
 Finally, hit the "Optimize" button, and viola!
 The program will print the Star Power path requested!
 

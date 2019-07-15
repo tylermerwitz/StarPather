@@ -133,22 +133,37 @@ public class StarPather {
 		this.instrument = instrument;
 	}
 
+	/*--updateSync--
+	 *This method is used to update the BPM and time signature
+	 *at a given point so that the program can correctly calculate
+	 *both the length of a SP activation and the amount of SP gained
+	 *while whammying sustains.
+	 *The "time" parameter must be entered as the chart position.
+	 *Doing so will update the global variables 'ts' (time signature),
+	 *BPM, BPS, posEarly (used for squeezing and early whammying),
+	 *and posLate (used for squeezing)*/
 	public void updateSync (int time) {
-		if (time <= 0) {
+		if (time <= 0) { //This check was added to catch a specific bug, need to test deletion
 			time = 1;
 		}
 		SortedMap<Integer,SyncEvent> subMap = tsMap.subMap(tsMap.firstKey(), time);
-		SyncEvent e = subMap.get(subMap.lastKey());
+		SyncEvent e = subMap.get(subMap.lastKey()); //Finds the last SyncEvent that occurs before the position entered
 
 		ts.setTop(e.getValue());
+		/*A .chart file lists time signatures in a convoluted manner
+		 * where the bottom of a time sig reads as follows:
+		 * 0 = 4, 3 = 8, 4 = 16
+		 * Logic would dictate that 5 = 32 and 6 = 64
+		 * but I have yet to come across a chart that uses a 32 or 64 TS
+		 * and I would need an example of one in order to confirm this and
+		 * add the code to handle such.*/
 		if (e.getValue2() == 0)
 			ts.setBottom(4);
 		else if (e.getValue2() == 3)
 			ts.setBottom(8);
 		else if (e.getValue2() == 4)
 			ts.setBottom(16);
-		//System.out.println("Time: " + ts.top + "/" + ts.bottom);
-
+	
 		SortedMap<Integer,SyncEvent> subMap2 = bpmMap.subMap(bpmMap.firstKey(), time);
 		SyncEvent e2 = subMap2.get(subMap2.lastKey());
 
@@ -156,11 +171,15 @@ public class StarPather {
 		bps = bpm/60;
 		posEarly = Math.ceil(bps * .065 * resolution);
 		posLate = Math.ceil(bps * .075 * resolution);
+		/*According to the sources I could find, the standard hit
+		 * windows in CH are 65 ms early and 75 ms late when the
+		 * video offset is equal to 0. Therefore BPM dictates the
+		 * positional windows for squeezing and early whammying.*/
 
 
 	}
 
-
+	//Old version of updateSync, now deprecated
 	public int updateSync (int time, int index) {
 		if (!syncEvents.isEmpty()) {
 
@@ -196,6 +215,9 @@ public class StarPather {
 		return index;
 	}
 
+	/*--getTotalSum--
+	 * This method returns the total score of the chart BEFORE solos and
+	 * any star power activations are added, AKA the "BASE SCORE"*/
 	public int getTotalSum () {
 		int sum = 0;
 
@@ -207,6 +229,11 @@ public class StarPather {
 		return sum;
 	}
 
+	/*--getValuesSum--
+	 * This method returns the total values of notes between two positions.
+	 * This is the main method used for obtaining the highest score for
+	 * a given activation. To do so, you enter the activation position (min)
+	 * and the position in which Star Power will run out (max)*/
 	public int getValueSum (int min, int max) {
 		int sum = 0;
 
@@ -222,7 +249,7 @@ public class StarPather {
 		}
 		Note nn = subMap.get(subMap.lastKey());
 		int noteEnd = nn.getTime() + nn.getLength();
-		if (max < noteEnd) {
+		if (max < noteEnd) { //Needed in case SP ends on sustain note
 			int lengthDif = noteEnd - max;
 
 			int lv = (int) Math.ceil(((lengthDif / resolution) * (resolution / Math.ceil(resolution/25))));
@@ -233,7 +260,7 @@ public class StarPather {
 		if (subMap2.size() > 0) {
 			Note ln = subMap2.get(subMap2.lastKey());
 			noteEnd = ln.getTime() + ln.getLength();
-			if (noteEnd > min) {
+			if (noteEnd > min) { //Needed in case SP begins on sustain note
 				int lengthDif = noteEnd - min;
 
 				int lv = (int) Math.ceil(((lengthDif / resolution) * (resolution / Math.ceil(resolution/25))));
@@ -244,6 +271,11 @@ public class StarPather {
 		return sum;
 	}
 
+	/*--getLengthSum--
+	 * Returns the total length of all sustain notes between
+	 * two positions. This method is mostly used to calculate
+	 * the amount of whammy SP can be gained in a given SP
+	 * phrase.*/
 	public int getLengthSum (int min, int max) {
 		int sum = 0;
 
@@ -257,6 +289,8 @@ public class StarPather {
 		return sum;
 	}
 
+	/*--getInstruments--
+	 * */
 	public void getInstruments (InputStream chart, HashMap<String,ArrayList<String>> list) {
 		BufferedReader in = null;
 		String theline    = null;

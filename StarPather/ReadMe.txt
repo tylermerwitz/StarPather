@@ -1,8 +1,16 @@
-Welcome to StarPather V1.1.0!
+Welcome to StarPather V1.3.0!
 Created by Tyler Merwitz AKA MathyNoodles
-Last Updated: 06/18/2019
+Last Updated: 07/05/19
 
 Patch Notes:
+07/05/19
+   -Huge GUI Update! Added tons of stuff, including:
+      -Instrument
+      -Difficulty
+      -Average amount of whammy per SP sustain
+      -Squeeze On/Off
+      -Progress Bar
+   -Fixed a shit ton of bugs
 06/18/19 - V 1.1.0
    -Fixed various bugs, including major bug involving
     time signatures switching in the middle of an 
